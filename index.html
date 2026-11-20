@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>우리 반 생활지도·상담 기록</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#f5f6f3; --card:#ffffff; --ink:#1f2a2e; --muted:#69757a; --line:#e2e5df;
+  --accent:#2f6b5a; --accent-soft:#e6f0ec; --blue:#2f5a8a; --blue-soft:#e6eef7;
+  --warn:#b4472f; --warn-soft:#fbece8; --chip:#eef1ec; --radius:12px;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Noto Sans KR",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.55}
+header{background:var(--card);border-bottom:1px solid var(--line);padding:18px 20px 0;position:sticky;top:0;z-index:20}
+.wrap{max-width:980px;margin:0 auto}
+h1{font-size:20px;margin:0;letter-spacing:-.3px}
+.sub{color:var(--muted);font-size:13px;margin:4px 0 12px}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+nav button{border:none;background:none;padding:10px 14px;font:inherit;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer}
+nav button.on{color:var(--accent);border-bottom-color:var(--accent)}
+nav button[data-main="c"].on{color:var(--blue);border-bottom-color:var(--blue)}
+.subnav{display:flex;gap:6px;margin-bottom:16px}
+.subnav button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font:inherit;font-size:14px;cursor:pointer;color:var(--muted)}
+.subnav button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+main{padding:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+.card h2{font-size:16px;margin:0 0 12px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.grid .span2{grid-column:span 2}.grid .span4{grid-column:span 4}
+@media(max-width:720px){.grid{grid-template-columns:1fr 1fr}.grid .span4,.grid .span2{grid-column:span 2}}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px;font-weight:500}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+textarea{resize:vertical;min-height:70px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--chip);border-radius:999px;padding:5px 11px;font:inherit;font-size:13px;cursor:pointer;color:var(--ink)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.mode-c .chip.on{background:var(--blue);border-color:var(--blue)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:9px 16px;font:inherit;font-weight:500;cursor:pointer;color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.mode-c .btn.primary{background:var(--blue);border-color:var(--blue)}
+.btn.ai{background:#203c35;border-color:#203c35;color:#fff}
+.btn.danger{color:var(--warn);border-color:#ecc9bf}
+.btn.sm{padding:5px 11px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.spacer{flex:1}
+.hint{font-size:12.5px;color:var(--muted);margin-top:6px}
+.notice{background:var(--accent-soft);color:#24493f;border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:16px}
+.notice.warn{background:var(--warn-soft);color:#7a2f1f}
+.fields .f{margin-bottom:12px}
+.f .badge{display:none;margin-left:6px;background:#f6e7b4;color:#6b5310;border-radius:6px;padding:0 7px;font-size:11.5px;font-weight:500}
+.f.sug .badge{display:inline-block}
+.f.sug textarea{background:#fffbea;border-color:#e8d48a}
+.rec{border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;background:#fff}
+.rec .top{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}
+.rec .date{font-weight:700}
+.who{background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:1px 8px;font-size:13px;font-weight:500}
+.kind{border-radius:6px;padding:1px 8px;font-size:12.5px;font-weight:700}
+.kind.g{background:var(--accent-soft);color:var(--accent)}
+.kind.c{background:var(--blue-soft);color:var(--blue)}
+.tag{background:var(--chip);border-radius:6px;padding:1px 7px;font-size:12px;color:var(--muted)}
+.rec dl{display:grid;grid-template-columns:110px 1fr;gap:4px 10px;margin:8px 0 0;font-size:14px}
+.rec dt{color:var(--muted);font-weight:500}
+.rec dd{margin:0;white-space:pre-wrap}
+.empty{color:var(--muted);text-align:center;padding:30px 0}
+table.stu{width:100%;border-collapse:collapse;font-size:14px}
+table.stu td,table.stu th{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left}
+table.stu th{color:var(--muted);font-weight:500;font-size:13px}
+.stat{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.stat span{background:var(--chip);border-radius:8px;padding:6px 12px;font-size:14px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1f2a2e;color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
+.toast.show{opacity:1}
+.modal{position:fixed;inset:0;background:rgba(20,28,30,.4);display:none;align-items:center;justify-content:center;z-index:40;padding:20px}
+.modal.show{display:flex}
+.modal .box{background:#fff;border-radius:12px;padding:20px;max-width:380px;width:100%}
+.modal p{margin:0 0 16px}
+.status{font-size:12.5px;color:var(--muted)}
+.hidden{display:none!important}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp 0.8s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><h1>우리 반 생활지도·상담 기록</h1><select id="yearSel" aria-label="학년도" style="width:auto;flex:none;font:inherit;font-weight:600;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--accent)"></select></div>
+    <p class="sub">단어로 메모하면 AI가 기록 문장으로 정리해 줍니다. 기록은 이 브라우저에 저장되고, 엑셀·워드(한글) 파일과 백업 파일로 내보낼 수 있습니다.</p>
+    <nav id="mainNav">
+      <button data-main="g" class="on">생활지도 누가기록</button>
+      <button data-main="c">학부모·학생 상담</button>
+      <button data-main="view">학생별 모아보기</button>
+      <button data-main="students">학생 관리</button>
+      <button data-main="settings">설정·백업</button>
+    </nav>
+  </div>
+</header>
+<main class="wrap">
+  <div id="connNotice" class="notice">저장소에 연결하는 중입니다…</div>
+  <div class="subnav" id="subNav">
+    <button data-sub="write" class="on">기록하기</button>
+    <button data-sub="list">목록</button>
+    <button data-sub="export">내보내기</button>
+  </div>
+
+  <!-- ===== 생활지도 기록하기 ===== -->
+  <section id="sec-g-write" class="mode-g">
+    <div class="card">
+      <h2 id="g-formTitle">새 생활지도 기록</h2>
+      <div class="grid">
+        <div class="span2"><label for="g-student">학생</label><select id="g-student"></select></div>
+        <div><label for="g-date">날짜</label><input type="date" id="g-date"></div>
+        <div><label for="g-time">시간/교시</label><input id="g-time" placeholder="예: 3교시, 점심시간"></div>
+        <div class="span2"><label for="g-place">장소</label>
+          <select id="g-place"><option>교실</option><option>복도</option><option>급식실</option><option>운동장</option><option>특별실</option><option>화장실</option><option>온라인(게임·SNS)</option><option>기타</option></select></div>
+        <div class="span2"><label for="g-placeEtc">장소 직접 입력 (선택)</label><input id="g-placeEtc" placeholder="목록에 없으면 입력"></div>
+        <div class="span4"><label>유형</label><div class="chips" id="g-types"></div></div>
+        <div class="span4">
+          <label for="g-memo">메모 (단어 위주로 적어도 됩니다)</label>
+          <textarea id="g-memo" rows="4" placeholder="예: 쉬는시간 교실 큰소리 욕설, 성찰일지 안내, 친구들 앞 '어쩌라고', 복도 분리, 엄마 전화 지도 요청"></textarea>
+          <div class="row" style="margin-top:8px"><button class="btn ai" id="g-ai">AI로 정리하기</button><span class="status" id="g-aiStatus"></span></div>
+          <p class="hint">메모에 있는 내용은 문장으로 풀어 쓰고, 메모에 없는 칸은 상황에 맞는 계획(“~할 예정임”)으로 채웁니다. 계획으로 채운 칸은 노란색으로 표시되니, 실제와 다르면 고쳐 주세요.</p>
+        </div>
+      </div>
+    </div>
+    <div class="card fields">
+      <h2>기록 내용</h2>
+      <div id="g-fields"></div>
+      <div class="row"><button class="btn" id="g-reset">새로 쓰기</button><span class="spacer"></span><span class="status" id="g-saveStatus"></span><button class="btn primary" id="g-save">저장</button></div>
+    </div>
+  </section>
+
+  <!-- ===== 상담 기록하기 ===== -->
+  <section id="sec-c-write" class="mode-c hidden">
+    <div class="card">
+      <h2 id="c-formTitle">새 상담 기록</h2>
+      <div class="grid">
+        <div class="span2"><label for="c-student">학생</label><select id="c-student"></select></div>
+        <div><label for="c-date">상담 날짜</label><input type="date" id="c-date"></div>
+        <div><label for="c-time">시간</label><input id="c-time" placeholder="예: 15:00~15:30"></div>
+        <div><label for="c-method">상담 방법</label>
+          <select id="c-method"><option>대면 상담</option><option>전화 상담</option><option>문자·하이톡</option><option>온라인(화상) 상담</option><option>가정 방문</option><option>기타</option><option>미기재</option></select></div>
+        <div><label for="c-requester">요청자</label>
+          <select id="c-requester"><option>교사 요청</option><option>보호자 요청</option><option>학생 요청</option><option>기타</option></select></div>
+        <div><label for="c-target">상담 대상</label>
+          <select id="c-target"><option>어머니</option><option>아버지</option><option>부모 모두</option><option>조부모</option><option>기타 보호자</option><option>학생 본인</option><option>교내 상담교사</option><option>관계 교사·기관</option></select></div>
+        <div><label for="c-place">장소 (선택)</label><input id="c-place" placeholder="예: 6학년 교실, 상담실"></div>
+        <div class="span4"><label>상담 주제</label><div class="chips" id="c-types"></div></div>
+        <div class="span4">
+          <label for="c-memo">메모 (단어 위주로 적어도 됩니다)</label>
+          <textarea id="c-memo" rows="4" placeholder="예: 내교 상담, 어머니, 최근 지도 불응 공유, 집에서도 게임 시간 많음 걱정, 가정에서 게임 시간 줄이기로, 2주 뒤 전화로 확인"></textarea>
+          <div class="row" style="margin-top:8px"><button class="btn ai" id="c-ai">AI로 정리하기</button><span class="status" id="c-aiStatus"></span></div>
+          <p class="hint">메모에 있는 내용은 문장으로 풀어 쓰고, 메모에 없는 합의 사항·후속 조치는 상황에 맞는 계획(“~할 예정임”)으로 채웁니다. 계획으로 채운 칸은 노란색으로 표시됩니다. 보호자의 말처럼 실제로 있었던 일은 지어내지 않습니다.</p>
+        </div>
+      </div>
+    </div>
+    <div class="card fields">
+      <h2>상담 내용</h2>
+      <div id="c-fields"></div>
+      <div class="row"><button class="btn" id="c-reset">새로 쓰기</button><span class="spacer"></span><span class="status" id="c-saveStatus"></span><button class="btn primary" id="c-save">저장</button></div>
+    </div>
+  </section>
+
+  <!-- ===== 목록 (모드별) ===== -->
+  <section id="sec-g-list" class="hidden"></section>
+  <section id="sec-c-list" class="hidden"></section>
+  <!-- ===== 내보내기 (모드별) ===== -->
+  <section id="sec-g-export" class="hidden mode-g"></section>
+  <section id="sec-c-export" class="hidden mode-c"></section>
+
+  <!-- ===== 학생별 모아보기 ===== -->
+  <section id="sec-view" class="hidden">
+    <div class="card">
+      <div class="grid">
+        <div class="span2"><label for="v-student">학생</label><select id="v-student"></select></div>
+        <div class="span2"><label for="v-kind">보기</label><select id="v-kind"><option value="">생활지도 + 상담 모두</option><option value="g">생활지도 누가기록만</option><option value="c">상담 기록만</option></select></div>
+      </div>
+      <div class="stat" id="v-stat"></div>
+    </div>
+    <div id="v-box"></div>
+  </section>
+
+  <!-- ===== 학생 관리 ===== -->
+  <section id="sec-students" class="hidden">
+    <div class="card">
+      <h2>학생 추가</h2>
+      <div class="grid">
+        <div><label for="sNo">번호</label><input id="sNo" type="number" min="1" placeholder="12"></div>
+        <div class="span2"><label for="sName">이름 또는 이니셜 (선택)</label><input id="sName" placeholder="예: J, 김○○"></div>
+        <div style="display:flex;align-items:flex-end"><button class="btn primary" id="addStuBtn" style="width:100%">추가</button></div>
+      </div>
+      <div class="grid" style="margin-top:12px">
+        <div><label for="bFrom">번호 한 번에 추가: 시작</label><input id="bFrom" type="number" min="1" value="1"></div>
+        <div><label for="bTo">끝</label><input id="bTo" type="number" min="1" value="20"></div>
+        <div class="span2" style="display:flex;align-items:flex-end"><button class="btn" id="bulkBtn" style="width:100%">번호만 한 번에 추가 (없는 번호만)</button></div>
+      </div>
+      <p class="hint">학생 명단은 생활지도와 상담 기록이 함께 씁니다. 이름을 비워 두면 번호로만 표시됩니다. 개인정보 보호를 위해 실명보다 이니셜 사용을 권하며, 파일로 내보낼 때도 여기 적은 그대로 나옵니다.</p>
+    </div>
+    <div class="card">
+      <h2>이름 한꺼번에 넣기</h2>
+      <label for="pasteNames">한 줄에 한 명씩 붙여 넣으세요</label>
+      <textarea id="pasteNames" rows="6" placeholder="번호와 이름을 함께 (엑셀·나이스에서 두 칸을 복사해 붙여 넣어도 됩니다)&#10;3 김민준&#10;4 이서연&#10;&#10;또는 이름만 순서대로 적으면 위 번호부터 차례로 들어갑니다&#10;김민준&#10;이서연"></textarea>
+      <div class="row" style="margin-top:8px"><span class="status" id="pastePreview"></span><span class="spacer"></span><button class="btn primary" id="pasteBtn">이름 넣기</button></div>
+      <p class="hint">번호가 같은 학생이 있으면 이름만 바뀌고, 없는 번호는 새로 추가됩니다. 이름만 적으면 명단의 첫 번호부터 순서대로 들어갑니다.</p>
+    </div>
+    <div class="card"><p class="hint" style="margin:0 0 8px">이름 칸을 눌러 바로 입력하세요. Enter를 누르거나 다른 칸으로 넘어가면 자동으로 저장됩니다.</p>
+      <table class="stu"><thead><tr><th style="width:60px">번호</th><th>이름</th><th style="width:80px">생활지도</th><th style="width:60px">상담</th><th style="width:150px"></th></tr></thead><tbody id="stuBody"></tbody></table></div>
+  </section>
+  <!-- ===== 설정·백업 ===== -->
+  <section id="sec-settings" class="hidden">
+    <div class="card">
+      <h2>백업 (꼭 해 두세요)</h2>
+      <p class="hint" id="dataState" style="margin-top:0"></p>
+      <p class="hint" id="backupState"></p>
+      <div class="row" style="margin-top:8px">
+        <button class="btn primary" id="backupBtn">백업 파일 내려받기</button>
+        <label class="btn" style="margin:0;color:var(--ink);font-size:15px">백업 파일 불러오기<input type="file" id="restoreFile" accept=".json,application/json" class="hidden"></label>
+      </div>
+      <p class="hint">기록은 이 브라우저에만 저장됩니다. 브라우저 기록·쿠키를 지우거나 다른 컴퓨터에서 열면 보이지 않습니다. 백업 파일을 USB나 학교 업무용 저장 공간에 보관하고, 다른 컴퓨터에서는 ‘불러오기’로 이어서 쓰세요. 백업 파일에는 학생 기록이 그대로 들어 있으니 개인정보로 다뤄 주세요.</p>
+    </div>
+    <div class="card">
+      <h2>AI 정리 설정</h2>
+      <p class="hint" id="keyState" style="margin-top:0"></p>
+      <div class="grid">
+        <div class="span2"><label for="keyInput">Anthropic API 키</label><input id="keyInput" type="password" autocomplete="off" placeholder="sk-ant-…"></div>
+        <div class="span2"><label for="modelSel">모델</label><select id="modelSel"><option value="claude-sonnet-5-5">Claude Sonnet 5.5 (기본, 문장이 더 자연스러움)</option><option value="claude-haiku-5-5">Claude Haiku 5.5 (빠르고 저렴)</option></select></div>
+      </div>
+      <div class="row" style="margin-top:10px"><button class="btn primary" id="keySave">키 저장</button><button class="btn" id="keyTest">키 확인</button><span class="spacer"></span><button class="btn danger" id="keyDel">키 지우기</button></div>
+      <p class="hint">키는 이 브라우저에만 저장되고, 사이트 코드나 깃허브에는 들어가지 않습니다. 메모를 정리할 때만 Anthropic으로 메모 내용이 전송됩니다. 키는 console.anthropic.com에서 만들 수 있고, 사용한 만큼 요금이 따로 나갑니다(Claude 구독과 별개). 공용 컴퓨터에서는 쓰고 나서 ‘키 지우기’를 눌러 주세요.</p>
+    </div>
+  </section>
+</main>
+
+<div class="modal" id="modal">
+<div class="box"><p id="modalText"></p><div class="row"><span class="spacer"></span><button class="btn" id="modalNo">취소</button><button class="btn danger" id="modalYes">삭제</button></div></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== 워드(docx) 만들기 도구 =====
+function ngEsc(s){ return String(s==null?'':s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function ngRun(text,o){ o=o||{}; const size=o.size||20;
+  const rpr='<w:rPr><w:rFonts w:ascii="Malgun Gothic" w:hAnsi="Malgun Gothic" w:eastAsia="맑은 고딕" w:cs="Malgun Gothic"/>'+(o.bold?'<w:b/>':'')+'<w:sz w:val="'+size+'"/><w:szCs w:val="'+size+'"/></w:rPr>';
+  return String(text==null?'':text).split(/\r?\n/).map((l,i)=>'<w:r>'+rpr+(i>0?'<w:br/>':'')+'<w:t xml:space="preserve">'+ngEsc(l)+'</w:t></w:r>').join(''); }
+function ngPara(text,o){ o=o||{}; const jc=o.align?'<w:jc w:val="'+o.align+'"/>':''; const after=o.after==null?80:o.after;
+  return '<w:p><w:pPr><w:spacing w:before="'+(o.before||0)+'" w:after="'+after+'" w:line="300" w:lineRule="auto"/>'+jc+'</w:pPr>'+ngRun(text,o)+'</w:p>'; }
+function ngCell(text,width,o){ o=o||{}; const shd=o.shade?'<w:shd w:val="clear" w:color="auto" w:fill="'+o.shade+'"/>':''; const span=o.span?'<w:gridSpan w:val="'+o.span+'"/>':'';
+  return '<w:tc><w:tcPr><w:tcW w:w="'+width+'" w:type="dxa"/>'+span+shd+'<w:vAlign w:val="center"/></w:tcPr>'+ngPara(text,{bold:o.bold,size:o.size||19,after:0,align:o.align})+'</w:tc>'; }
+function ngTable(rows,widths){ const total=widths.reduce((a,b)=>a+b,0);
+  const borders='<w:tblBorders>'+['top','left','bottom','right','insideH','insideV'].map(b=>'<w:'+b+' w:val="single" w:sz="4" w:space="0" w:color="7F7F7F"/>').join('')+'</w:tblBorders>';
+  const grid='<w:tblGrid>'+widths.map(w=>'<w:gridCol w:w="'+w+'"/>').join('')+'</w:tblGrid>';
+  const mar='<w:tblCellMar><w:top w:w="70" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:bottom w:w="70" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tblCellMar>';
+  return '<w:tbl><w:tblPr><w:tblW w:w="'+total+'" w:type="dxa"/>'+borders+'<w:tblLayout w:type="fixed"/>'+mar+'</w:tblPr>'+grid+rows.map(r=>'<w:tr><w:trPr><w:cantSplit/></w:trPr>'+r+'</w:tr>').join('')+'</w:tbl>'; }
+function ngFmtDate(d){ if(!d) return ''; const p=String(d).split('-'); if(p.length!==3) return d; const dt=new Date(+p[0],+p[1]-1,+p[2]); return p[0]+'. '+(+p[1])+'. '+(+p[2])+'.('+'일월화수목금토'[dt.getDay()]+')'; }
+// opts: {title, infoRows, summary, index, records:[{head, rows}], closing, today, signer}
+function ngBuildDocumentXml(opts){
+  const W=9638, L=1900, R=W-L; let body='';
+  body+=ngPara(opts.title||'',{bold:true,size:32,align:'center',after:240});
+  body+=ngTable((opts.infoRows||[]).map(x=>ngCell(x[0],L,{bold:true,shade:'EEF2F6',align:'center'})+ngCell(x[1],R)),[L,R]);
+  [opts.summary,opts.index].forEach((t,k)=>{ if(!t||!t.rows||!t.rows.length) return;
+    body+=ngPara('',{after:120}); body+=ngPara(t.title||'',{bold:true,size:21,after:80});
+    const ws=t.widths; const rows=[t.head.map((h,i)=>ngCell(h,ws[i],{bold:true,shade:'EEF2F6',align:'center'})).join('')];
+    t.rows.forEach(r=>rows.push(r.map((v,i)=>ngCell(String(v),ws[i],{align:(k===0||i<2)?'center':'left'})).join('')));
+    body+=ngTable(rows,ws); });
+  (opts.records||[]).forEach(r=>{ body+=ngPara('',{after:120});
+    const rows=[ngCell(r.head,W,{span:2,bold:true,shade:'DCE6F0'})];
+    r.rows.forEach(x=>rows.push(ngCell(x[0],L,{bold:true,shade:'F5F7FA',align:'center'})+ngCell(x[1]||'-',R)));
+    body+=ngTable(rows,[L,R]); });
+  body+=ngPara('',{after:240});
+  body+=ngPara(opts.closing||'위 기록은 사실과 다름없음을 확인합니다.',{align:'center',size:21,before:240,after:200});
+  body+=ngPara(opts.today||'',{align:'center',size:21,after:300});
+  body+=ngPara('작성자: '+(opts.signer||'                    ')+'   (서명 또는 인)',{align:'right',size:21});
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+body+
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="567" w:footer="567" w:gutter="0"/></w:sectPr></w:body></w:document>'; }
+const NG_CONTENT_TYPES='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>';
+const NG_RELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>';
+const NG_DOC_RELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/></Relationships>';
+const NG_STYLES='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Malgun Gothic" w:eastAsia="맑은 고딕" w:hAnsi="Malgun Gothic" w:cs="Malgun Gothic"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US" w:eastAsia="ko-KR" w:bidi="ar-SA"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="a"><w:name w:val="Normal"/><w:qFormat/></w:style><w:style w:type="table" w:default="1" w:styleId="a1"><w:name w:val="Normal Table"/><w:tblPr><w:tblInd w:w="0" w:type="dxa"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style></w:styles>';
+const NG_SETTINGS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:defaultTabStop w:val="800"/><w:characterSpacingControl w:val="doNotCompress"/><w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/></w:compat></w:settings>';
+function ngCore(title){ const t=new Date().toISOString().replace(/\.\d+Z$/,'Z'); return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>'+ngEsc(title)+'</dc:title><dc:creator>담임교사</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">'+t+'</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">'+t+'</dcterms:modified></cp:coreProperties>'; }
+const NG_APP='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Microsoft Office Word</Application></Properties>';
+async function ngBuildDocx(opts){ const zip=new JSZip(), nf={createFolders:false};
+  zip.file('[Content_Types].xml',NG_CONTENT_TYPES,nf); zip.file('_rels/.rels',NG_RELS,nf); zip.file('word/document.xml',ngBuildDocumentXml(opts),nf);
+  zip.file('word/styles.xml',NG_STYLES,nf); zip.file('word/settings.xml',NG_SETTINGS,nf); zip.file('word/_rels/document.xml.rels',NG_DOC_RELS,nf);
+  zip.file('docProps/core.xml',ngCore(opts.title||''),nf); zip.file('docProps/app.xml',NG_APP,nf);
+  return zip.generateAsync({type:'arraybuffer',compression:'DEFLATE',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}); }
+</script>
+
+<script>
+// ===== 설정 =====
+const MODES = {
+  g:{ name:'생활지도 누가기록', short:'생활지도', col:'guidance', noun:'기록', docTitle:'학생 생활지도 누가기록', filePrefix:'누가기록',
+      types:['욕설·비속어','패드립·성적 표현','교사 지도 불응','수업 방해','친구 간 다툼·폭력','따돌림·관계 문제','금품 관련','기타'],
+      fields:[['summary','사건 요약',3],['response','학생 반응',2],['guidance','지도 내용',3],['parent','보호자 연락',2],['followup','후속 조치',2]] },
+  c:{ name:'학부모·학생 상담', short:'상담', col:'counsel', noun:'상담 기록', docTitle:'상담 기록부', filePrefix:'상담기록',
+      types:['학교생활 적응','교우관계','학습','생활지도·문제행동','정서·행동','건강','진로','가정환경','학교폭력 관련','기타'],
+      fields:[['summary','상담 내용',4],['parentView','상담 대상 의견·요청',3],['advice','교사 안내·조언',3],['agree','합의 사항',2],['followup','후속 조치',2]] }
+};
+const METHODS=['대면 상담','전화 상담','문자·하이톡','온라인(화상) 상담','가정 방문','기타','미기재'];
+const GROUP=t=> t==='학생 본인'?'학생' : (t==='교내 상담교사'||t==='관계 교사·기관')?'교사·기관':'학부모';
+
+const $=id=>document.getElementById(id);
+let db=null, stuCol=null; const cols={g:null,c:null};
+let allStudents=[], students=[];
+const S={ g:{all:[],recs:[],editing:null,types:new Set()}, c:{all:[],recs:[],editing:null,types:new Set()} };
+let sample=null, downloads=null;
+let MAIN='g'; const SUB={g:'write',c:'write'};
+
+function today(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function schoolYearOf(d){ if(!d) return null; const y=+d.slice(0,4), m=+d.slice(5,7); return m&&m<3? y-1 : y; }
+function curSchoolYear(){ return schoolYearOf(today()); }
+let YEAR=curSchoolYear();
+function stuYear(s){ return s.year||2026; }
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2200); }
+function confirmBox(text,yes){ return new Promise(res=>{ $('modalText').textContent=text; $('modalYes').textContent=yes||'삭제'; $('modalYes').className='btn '+(yes?'primary':'danger'); $('modal').classList.add('show');
+  const done=v=>{ $('modal').classList.remove('show'); $('modalYes').onclick=$('modalNo').onclick=null; res(v); };
+  $('modalYes').onclick=()=>done(true); $('modalNo').onclick=()=>done(false); }); }
+function nameOf(s){ return [s.no?s.no+'번':'', s.name||''].filter(Boolean).join(' ') || '(이름 없음)'; }
+function stuLabel(id){ const s=allStudents.find(x=>x.id===id); return s? nameOf(s) : '(삭제된 학생)'; }
+function nowLabel(ts){ if(!ts) return ''; const d=new Date(ts); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function sortRecs(a){ return a.slice().sort((x,y)=>(y.date||'').localeCompare(x.date||'')||(y.createdAt||0)-(x.createdAt||0)); }
+function sortedStudents(){ return students.slice().sort((a,b)=>(a.no||999)-(b.no||999)); }
+
+// ===== 학년도 =====
+function applyYear(){
+  students=allStudents.filter(x=>stuYear(x)===YEAR);
+  const ids=new Set(students.map(x=>x.id)), known=new Set(allStudents.map(x=>x.id));
+  ['g','c'].forEach(m=>{ S[m].recs=S[m].all.filter(r=>ids.has(r.studentId)||(!known.has(r.studentId)&&(schoolYearOf(r.date)||2026)===YEAR)); });
+}
+function renderYearSel(){
+  const ys=new Set([2026,curSchoolYear(),curSchoolYear()+1,YEAR]); allStudents.forEach(x=>ys.add(stuYear(x)));
+  $('yearSel').innerHTML=[...ys].sort((a,b)=>b-a).map(y=>`<option value="${y}">${y}학년도${y===curSchoolYear()?' (올해)':''}</option>`).join('');
+  $('yearSel').value=String(YEAR);
+}
+function refreshAll(){ applyYear(); renderYearSel(); fillStudentSelects(); renderCurrent(); }
+
+// ===== 화면 이동 =====
+function show(){
+  document.querySelectorAll('#mainNav button').forEach(b=>b.classList.toggle('on',b.dataset.main===MAIN));
+  const isMode=MAIN==='g'||MAIN==='c';
+  $('subNav').classList.toggle('hidden',!isMode);
+  if(isMode) document.querySelectorAll('#subNav button').forEach(b=>b.classList.toggle('on',b.dataset.sub===SUB[MAIN]));
+  document.querySelectorAll('main > section').forEach(s=>s.classList.add('hidden'));
+  const id = isMode ? `sec-${MAIN}-${SUB[MAIN]}` : `sec-${MAIN}`;
+  $(id).classList.remove('hidden');
+  renderCurrent();
+}
+function renderCurrent(){
+  if(MAIN==='settings') renderSettings();
+  else if(MAIN==='students') renderStudents();
+  else if(MAIN==='view') renderView();
+  else if(SUB[MAIN]==='list') renderList(MAIN);
+  else if(SUB[MAIN]==='export') renderExportCount(MAIN);
+}
+function go(main,sub){ MAIN=main; if(sub) SUB[main]=sub; show(); window.scrollTo(0,0); }
+document.querySelectorAll('#mainNav button').forEach(b=>b.onclick=()=>go(b.dataset.main));
+document.querySelectorAll('#subNav button').forEach(b=>b.onclick=()=>go(MAIN,b.dataset.sub));
+
+// ===== 화면 만들기 (필드, 목록, 내보내기) =====
+function buildUI(){
+  ['g','c'].forEach(m=>{
+    const M=MODES[m];
+    $(m+'-fields').innerHTML=M.fields.map(f=>`<div class="f"><label for="${m}-f-${f[0]}">${f[1]}<span class="badge">AI 제안 · 확인 필요</span></label><textarea id="${m}-f-${f[0]}" rows="${f[2]}"></textarea></div>`).join('');
+    M.fields.forEach(f=>$(`${m}-f-${f[0]}`).addEventListener('input',e=>e.target.closest('.f').classList.remove('sug')));
+    $(`sec-${m}-list`).innerHTML=`<div class="card"><div class="grid">
+      <div class="span2"><label for="${m}-lStudent">학생</label><select id="${m}-lStudent"></select></div>
+      <div><label for="${m}-lFrom">시작일</label><input type="date" id="${m}-lFrom"></div>
+      <div><label for="${m}-lTo">종료일</label><input type="date" id="${m}-lTo"></div>
+      <div class="span4"><label for="${m}-lSearch">검색</label><input id="${m}-lSearch" placeholder="내용 검색"></div></div></div><div id="${m}-listBox"></div>`;
+    $(`sec-${m}-export`).innerHTML=`<div class="card"><h2>${m==='g'?'증빙 파일 만들기':'상담 실적 · 증빙 파일 만들기'}</h2><div class="grid">
+      <div class="span2"><label for="${m}-eStudent">학생</label><select id="${m}-eStudent"></select></div>
+      <div><label for="${m}-eFrom">시작일</label><input type="date" id="${m}-eFrom"></div>
+      <div><label for="${m}-eTo">종료일</label><input type="date" id="${m}-eTo"></div>
+      <div class="span2"><label for="${m}-eTeacher">작성자 (선택)</label><input id="${m}-eTeacher" placeholder="예: 6학년 ○반 담임 ○○○"></div>
+      <div class="span2"><label for="${m}-eTitle">문서 제목</label><input id="${m}-eTitle" value="${M.docTitle}"></div></div>
+      <p class="hint" id="${m}-eCount"></p><div class="hint" id="${m}-eStats"></div>
+      <div class="row" style="margin-top:10px"><button class="btn primary" id="${m}-docx">워드 파일 (.docx)</button><button class="btn primary" id="${m}-xlsx">엑셀 파일 (.xlsx)</button></div>
+      <p class="hint">워드 파일은 한글(HWP)에서도 열립니다. 한글에서 연 뒤 ‘다른 이름으로 저장’에서 .hwp 형식을 고르면 한글 파일로 바꿀 수 있습니다. ${m==='g'?'워드 파일은 서명란이 있는 제출용 서식, 엑셀 파일은 표로 정리한 목록입니다.':'워드 파일은 상담 실적표와 서명란이 있는 제출용 서식, 엑셀 파일은 상담 목록과 월별 실적 시트로 되어 있습니다.'}</p></div>`;
+    ['lStudent','lFrom','lTo'].forEach(i=>$(`${m}-${i}`).onchange=()=>renderList(m)); $(`${m}-lSearch`).oninput=()=>renderList(m);
+    ['eStudent','eFrom','eTo'].forEach(i=>$(`${m}-${i}`).onchange=()=>renderExportCount(m));
+    $(`${m}-docx`).onclick=()=>exportDocx(m); $(`${m}-xlsx`).onclick=()=>exportXlsx(m);
+    $(`${m}-reset`).onclick=()=>resetForm(m); $(`${m}-save`).onclick=()=>saveRecord(m); $(`${m}-ai`).onclick=()=>aiFill(m);
+  });
+  $('v-student').onchange=renderView; $('v-kind').onchange=renderView;
+}
+
+function renderChips(m){ const box=$(m+'-types'); box.innerHTML=''; MODES[m].types.forEach(t=>{ const c=document.createElement('button'); c.type='button'; c.className='chip'+(S[m].types.has(t)?' on':''); c.textContent=t;
+  c.onclick=()=>{ S[m].types.has(t)?S[m].types.delete(t):S[m].types.add(t); renderChips(m); }; box.appendChild(c); }); }
+
+function fillStudentSelects(){
+  const opts=sortedStudents().map(s=>`<option value="${s.id}">${ngEsc(nameOf(s))}</option>`).join('');
+  const keep=id=>$(id).value;
+  ['g','c'].forEach(m=>{
+    const f=keep(m+'-student'), l=keep(m+'-lStudent'), e=keep(m+'-eStudent');
+    $(m+'-student').innerHTML=students.length?opts:'<option value="">먼저 ‘학생 관리’에서 학생을 추가하세요</option>';
+    $(m+'-lStudent').innerHTML='<option value="">전체 학생</option>'+opts;
+    $(m+'-eStudent').innerHTML='<option value="">전체 학생</option>'+opts;
+    if(f&&students.some(s=>s.id===f)) $(m+'-student').value=f;
+    $(m+'-lStudent').value=students.some(s=>s.id===l)?l:''; $(m+'-eStudent').value=students.some(s=>s.id===e)?e:'';
+  });
+  const v=keep('v-student');
+  $('v-student').innerHTML=students.length?opts:'<option value="">학생이 없습니다</option>';
+  if(v&&students.some(s=>s.id===v)) $('v-student').value=v;
+}
+
+// ===== 기록 폼 =====
+function clearFlags(m){ document.querySelectorAll(`#sec-${m}-write .f.sug`).forEach(x=>x.classList.remove('sug')); }
+function flagCount(m){ return document.querySelectorAll(`#sec-${m}-write .f.sug`).length; }
+function gPlace(){ return $('g-placeEtc').value.trim()||$('g-place').value; }
+function resetForm(m){
+  S[m].editing=null; $(m+'-formTitle').textContent= m==='g'?'새 생활지도 기록':'새 상담 기록';
+  $(m+'-date').value=today(); $(m+'-time').value=''; $(m+'-memo').value='';
+  if(m==='g'){ $('g-place').value='교실'; $('g-placeEtc').value=''; }
+  else { $('c-method').value='대면 상담'; $('c-requester').value='교사 요청'; $('c-target').value='어머니'; $('c-place').value=''; }
+  MODES[m].fields.forEach(f=>$(`${m}-f-${f[0]}`).value='');
+  S[m].types=new Set(); renderChips(m); clearFlags(m); $(m+'-saveStatus').textContent=''; $(m+'-aiStatus').textContent='';
+}
+
+function promptFor(m,memo){
+  if(m==='g') return `너는 초등학교 담임교사의 학생 생활지도 누가기록 작성을 돕는다. 교사가 단어 위주로 적은 메모를, 나중에 증빙자료로 제출할 수 있는 완성된 누가기록으로 정리하라. 다섯 항목을 모두 채운다.
+
+[A. 메모에 근거가 있는 항목]
+- 메모의 단어를 자연스럽고 충분한 문장으로 풀어 쓴다. 언제, 어디서, 누가, 무엇을, 어떻게가 드러나게 하고, 단어 사이의 흐름을 이어 주는 표현은 써도 된다.
+- 단, 메모에 없는 행동, 발언, 횟수, 시각, 등장인물은 만들지 않는다. 학생의 성격·심리를 평가하거나 진단처럼 들리는 표현은 쓰지 않는다.
+
+[B. 메모에 근거가 없는 항목]
+- 빈칸으로 두지 말고, 이 사안에 맞는 적절한 계획을 "~할 예정임", "~이 필요함" 형태로 쓴다. 이미 일어난 일처럼 쓰지 않는다.
+  예) parent: "가정에 연락하여 사안을 안내하고 가정 내 지도 협조를 요청할 예정임."
+  예) followup: "해당 학생과 1:1 상담을 실시하고, 같은 행동이 반복되면 학교 생활지도 절차에 따라 관리자에게 보고할 예정임."
+  예) response(메모에 학생 반응이 없을 때): "지도 이후 해당 학생의 반응과 행동 변화를 관찰하여 추가 기록할 예정임."
+  예) guidance(메모에 지도 내용이 없을 때): 사안에 맞는 지도 계획을 "~지도할 예정임"으로 쓴다.
+- 이렇게 쓴 항목의 키 이름을 suggested 배열에 넣는다.
+
+[공통 규칙]
+1. 객관적으로 서술하고 개조식 종결("~함", "~하였음", "~할 예정임")을 쓴다. 감정이 담긴 표현은 쓰지 않는다.
+2. 학생이 한 말이 메모에 있으면 큰따옴표로 옮긴다. 욕설은 첫 글자만 남기고 나머지를 ○로 가린다.
+3. 일어난 순서대로 쓴다.
+4. 기록 대상 학생은 "해당 학생"으로 쓰고, 다른 학생은 메모에 적힌 표기(이니셜 등)를 그대로 쓴다.
+
+항목:
+- summary: 사건 요약. 언제, 어디서, 무엇을 했는지 2~4문장.
+- response: 교사의 지도에 대한 학생의 말과 태도.
+- guidance: 교사가 한 말과 조치(분리, 성찰일지, 보고 등).
+- parent: 보호자 연락 여부, 방법, 전달 내용, 보호자 반응.
+- followup: 후속 조치와 계획.
+- types: 유형 배열. 다음 중에서만 고른다: ${JSON.stringify(MODES.g.types)}
+- time: 메모에 시간이나 교시가 나오면 짧게(예: "3교시", "점심시간"), 없으면 "".
+- place: 메모에 장소가 나오면 짧게(예: "교실", "복도"), 없으면 "".
+- suggested: B에 따라 계획으로 채운 항목의 키 배열.
+
+JSON 객체 하나만 출력한다: {"summary":"","response":"","guidance":"","parent":"","followup":"","types":[],"time":"","place":"","suggested":[]}
+
+기본 정보: 날짜 ${$('g-date').value||'미기재'}, 시간 ${$('g-time').value||'미기재'}, 장소 ${gPlace()}
+교사 메모:
+"""
+${memo}
+"""`;
+  return `너는 초등학교 담임교사의 상담 기록(학부모·학생·관계 교사 상담) 작성을 돕는다. 교사가 단어 위주로 적은 상담 메모를, 상담 실적 증빙자료로 제출할 수 있는 완성된 상담 기록으로 정리하라.
+
+[기본 정보] 상담 날짜 ${$('c-date').value||'미기재'}, 시간 ${$('c-time').value||'미기재'}, 방법 ${$('c-method').value}, 요청자 ${$('c-requester').value}, 상담 대상 ${$('c-target').value}${$('c-place').value?', 장소 '+$('c-place').value:''}
+
+[항목]
+- summary: 상담 내용. 상담의 계기와 교사가 공유한 학생의 학교생활, 오간 이야기의 흐름을 2~5문장으로.
+- parentView: 상담 대상(보호자, 학생 본인, 관계 교사)이 말한 의견, 고민, 걱정, 요청.
+- advice: 교사가 안내하거나 조언한 내용.
+- agree: 학교와 가정이 함께 하기로 합의한 사항.
+- followup: 후속 조치와 계획(다음 상담 일정, 확인 방법 등).
+- types: 상담 주제 배열. 다음 중에서만 고른다: ${JSON.stringify(MODES.c.types)}
+- suggested: 아래 [B]에 따라 계획으로 채운 항목의 키 배열.
+
+[A. 메모에 근거가 있는 항목] 메모의 단어를 자연스럽고 충분한 문장으로 풀어 쓴다. 메모에 없는 발언, 사실, 등장인물, 횟수는 만들지 않는다. 학생이나 보호자를 평가하거나 진단처럼 들리는 표현은 쓰지 않는다.
+[B. 메모에 근거가 없는 항목] summary, parentView, advice가 메모에 없으면 빈 문자열 ""로 둔다(실제로 오간 말은 지어내지 않는다). agree, followup이 메모에 없으면 이 상담에 맞는 계획을 "~할 예정임", "~하기로 협의할 예정임" 형태로 쓰고 suggested에 넣는다.
+[공통] 객관적으로 서술하고 개조식 종결("~함", "~하였음", "~할 예정임")을 쓴다. 보호자는 "보호자" 또는 메모의 표현(어머니, 아버지 등)으로, 학생은 "해당 학생"으로 쓴다. 교사 개인의 감정 표현은 기록에 넣지 않는다. 욕설은 첫 글자만 남기고 ○로 가린다.
+
+JSON 객체 하나만 출력한다: {"summary":"","parentView":"","advice":"","agree":"","followup":"","types":[],"suggested":[]}
+
+교사 메모:
+"""
+${memo}
+"""`;
+}
+
+async function aiFill(m){
+  const memo=$(m+'-memo').value.trim();
+  if(!memo){ toast('메모를 먼저 적어 주세요'); return; }
+  if(!sample){ $(m+'-aiStatus').textContent='이 화면에서는 AI 정리를 쓸 수 없습니다. 직접 입력해 주세요.'; return; }
+  const btn=$(m+'-ai'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>정리하는 중'; $(m+'-aiStatus').textContent='';
+  try{
+    const out=await sample.json(promptFor(m,memo),{modelTier:'default'});
+    const v=out&&typeof out==='object'?out:{}; const sug=Array.isArray(v.suggested)?v.suggested:[];
+    clearFlags(m);
+    MODES[m].fields.forEach(f=>{ const el=$(`${m}-f-${f[0]}`); if(typeof v[f[0]]==='string'){ el.value=v[f[0]]; if(sug.includes(f[0])&&v[f[0]].trim()) el.closest('.f').classList.add('sug'); } });
+    if(Array.isArray(v.types)){ v.types.filter(t=>MODES[m].types.includes(t)).forEach(t=>S[m].types.add(t)); renderChips(m); }
+    if(m==='g'){
+      if(typeof v.time==='string'&&v.time.trim()&&!$('g-time').value.trim()) $('g-time').value=v.time.trim();
+      if(typeof v.place==='string'&&v.place.trim()&&!$('g-placeEtc').value.trim()){
+        const pv=v.place.trim(), opt=[...$('g-place').options].map(o=>o.value).find(o=>o===pv||o.startsWith(pv)||pv.startsWith(o));
+        if(opt) $('g-place').value=opt; else $('g-placeEtc').value=pv; }
+    }
+    const n=flagCount(m);
+    $(m+'-aiStatus').textContent=n?`정리했습니다. 노란 칸 ${n}개는 메모에 없어 AI가 계획으로 채운 내용입니다. 확인 후 저장하세요.`:'정리했습니다. 내용을 확인하고 저장하세요.';
+  }catch(e){
+    const c=e&&e.code;
+    $(m+'-aiStatus').textContent=aiErrMsg(c);
+  }finally{ btn.disabled=false; btn.textContent='AI로 정리하기'; }
+}
+
+async function saveRecord(m){
+  if(!cols[m]){ toast('저장소에 연결되지 않았습니다'); return; }
+  const sid=$(m+'-student').value; if(!sid){ toast('학생을 먼저 추가하고 선택해 주세요'); return; }
+  if(!$(`${m}-f-summary`).value.trim()&&!$(m+'-memo').value.trim()){ toast('내용을 입력해 주세요'); return; }
+  const flagged=flagCount(m);
+  if(flagged&&!await confirmBox(`AI가 계획으로 채운 칸(노란 칸) ${flagged}개를 아직 확인하지 않았습니다. 그대로 저장할까요?`,'그대로 저장')) return;
+  const now=Date.now(), ed=S[m].editing, prev=ed?S[m].all.find(r=>r.id===ed):null;
+  const data={ studentId:sid, date:$(m+'-date').value||today(), time:$(m+'-time').value.trim(), types:[...S[m].types], memo:$(m+'-memo').value,
+    createdAt:prev?(prev.createdAt||now):now, updatedAt:now };
+  if(m==='g') data.place=gPlace();
+  else Object.assign(data,{method:$('c-method').value,requester:$('c-requester').value,target:$('c-target').value,place:$('c-place').value.trim()});
+  MODES[m].fields.forEach(f=>data[f[0]]=$(`${m}-f-${f[0]}`).value.trim());
+  const btn=$(m+'-save'); btn.disabled=true; $(m+'-saveStatus').textContent='저장 중…';
+  try{ await (ed?cols[m].doc(ed):cols[m].doc()).set(data); toast(ed?'수정했습니다':'저장했습니다'); resetForm(m); }
+  catch(e){ $(m+'-saveStatus').textContent=e&&e.code==='quota_exceeded'?'저장 공간이 가득 찼습니다. 오래된 기록을 정리해 주세요.':'저장하지 못했습니다. 잠시 후 다시 시도해 주세요.'; }
+  finally{ btn.disabled=false; }
+}
+
+function setSelect(id,val){ const sel=$(id); if([...sel.options].some(o=>o.value===val)) sel.value=val; }
+function editRecord(m,id){
+  const r=S[m].all.find(x=>x.id===id); if(!r) return;
+  go(m,'write'); S[m].editing=id; $(m+'-formTitle').textContent=m==='g'?'생활지도 기록 수정':'상담 기록 수정';
+  $(m+'-student').value=r.studentId; $(m+'-date').value=r.date||''; $(m+'-time').value=r.time||''; $(m+'-memo').value=r.memo||'';
+  if(m==='g'){ const opts=[...$('g-place').options].map(o=>o.value);
+    if(opts.includes(r.place)){ $('g-place').value=r.place; $('g-placeEtc').value=''; } else { $('g-place').value='기타'; $('g-placeEtc').value=r.place||''; } }
+  else { setSelect('c-method',r.method); setSelect('c-requester',r.requester); setSelect('c-target',r.target); $('c-place').value=r.place||''; }
+  MODES[m].fields.forEach(f=>$(`${m}-f-${f[0]}`).value=r[f[0]]||'');
+  S[m].types=new Set(r.types||[]); renderChips(m); clearFlags(m); $(m+'-saveStatus').textContent='';
+}
+async function deleteRecord(m,id){
+  const r=S[m].all.find(x=>x.id===id); if(!r) return;
+  if(!await confirmBox(`${ngFmtDate(r.date)} ${stuLabel(r.studentId)} ${MODES[m].noun}을 삭제할까요? 되돌릴 수 없습니다.`)) return;
+  try{ await cols[m].doc(id).delete(); toast('삭제했습니다'); if(S[m].editing===id) resetForm(m); }catch(e){ toast('삭제하지 못했습니다'); }
+}
+
+// ===== 목록 =====
+function searchText(m,r){ return [...MODES[m].fields.map(f=>r[f[0]]),r.memo,r.method,r.target,r.place,(r.types||[]).join(' ')].join(' '); }
+function filtered(m,sid,from,to,q){
+  return sortRecs(S[m].recs).filter(r=>(!sid||r.studentId===sid)&&(!from||r.date>=from)&&(!to||r.date<=to)&&(!q||searchText(m,r).includes(q)));
+}
+function metaLine(m,r){ return m==='g' ? [r.time,r.place].filter(Boolean).join(' · ') : [r.time,r.method,r.target,r.requester].filter(Boolean).join(' · '); }
+function recCard(m,r,withKind){
+  const el=document.createElement('div'); el.className='rec';
+  const rows=MODES[m].fields.filter(f=>r[f[0]]).map(f=>`<dt>${f[1]}</dt><dd>${ngEsc(r[f[0]])}</dd>`).join('');
+  el.innerHTML=`<div class="top">${withKind?`<span class="kind ${m}">${MODES[m].short}</span>`:''}<span class="date">${ngFmtDate(r.date)}</span><span class="status">${ngEsc(metaLine(m,r))}</span><span class="who">${ngEsc(stuLabel(r.studentId))}</span>${(r.types||[]).map(t=>`<span class="tag">${ngEsc(t)}</span>`).join('')}<span class="spacer"></span><button class="btn sm" data-e>수정</button><button class="btn sm danger" data-d>삭제</button></div><dl>${rows||'<dt>메모</dt><dd>'+ngEsc(r.memo||'')+'</dd>'}</dl>`;
+  el.querySelector('[data-e]').onclick=()=>editRecord(m,r.id); el.querySelector('[data-d]').onclick=()=>deleteRecord(m,r.id);
+  return el;
+}
+function renderList(m){
+  const list=filtered(m,$(m+'-lStudent').value,$(m+'-lFrom').value,$(m+'-lTo').value,$(m+'-lSearch').value.trim());
+  const box=$(m+'-listBox');
+  if(!list.length){ box.innerHTML=`<div class="card empty">${MODES[m].noun}이 없습니다.</div>`; return; }
+  box.innerHTML=''; list.forEach(r=>box.appendChild(recCard(m,r,false)));
+}
+
+// ===== 학생별 모아보기 =====
+function renderView(){
+  const sid=$('v-student').value, kind=$('v-kind').value, box=$('v-box');
+  if(!sid){ $('v-stat').innerHTML=''; box.innerHTML='<div class="card empty">학생을 선택해 주세요.</div>'; return; }
+  const g=S.g.recs.filter(r=>r.studentId===sid), c=S.c.recs.filter(r=>r.studentId===sid);
+  $('v-stat').innerHTML=`<span>생활지도 <b>${g.length}</b>건</span><span>상담 <b>${c.length}</b>건</span>`;
+  const items=[].concat(kind!=='c'?g.map(r=>['g',r]):[], kind!=='g'?c.map(r=>['c',r]):[])
+    .sort((a,b)=>(b[1].date||'').localeCompare(a[1].date||'')||(b[1].createdAt||0)-(a[1].createdAt||0));
+  if(!items.length){ box.innerHTML='<div class="card empty">이 학생의 기록이 없습니다.</div>'; return; }
+  box.innerHTML=''; items.forEach(([m,r])=>box.appendChild(recCard(m,r,true)));
+}
+
+// ===== 학생 관리 =====
+let editingStu=null;
+function recCount(m,id){ return S[m].all.filter(r=>r.studentId===id).length; }
+function renderStudents(){
+  const body=$('stuBody');
+  // 이름을 입력하던 칸이 있으면 다시 그린 뒤에도 그 칸에 커서를 돌려 둔다
+  const act=document.activeElement, keep=(act&&act.classList&&act.classList.contains('qName')&&body.contains(act))?{id:act.dataset.id,val:act.value,pos:act.selectionStart}:null;
+  if(keep) act.onblur=null;
+  renderStudentsInner(body);
+  if(keep){ const el=body.querySelector(`.qName[data-id="${keep.id}"]`); if(el){ el.value=keep.val; el.focus(); try{ el.setSelectionRange(keep.pos,keep.pos); }catch(e){} } }
+}
+function renderStudentsInner(body){
+  if(!students.length){ body.innerHTML='<tr><td colspan="5" class="empty">아직 학생이 없습니다.</td></tr>'; return; }
+  body.innerHTML='';
+  sortedStudents().forEach(s=>{
+    const ng=recCount('g',s.id), nc=recCount('c',s.id);
+    const tr=document.createElement('tr');
+    if(editingStu===s.id){
+      tr.innerHTML=`<td><input type="number" min="1" class="eNo" value="${s.no||''}" style="width:56px"></td><td><input class="eName" value="${ngEsc(s.name||'')}" placeholder="이름 또는 이니셜"></td><td>${ng}건</td><td>${nc}건</td><td style="white-space:nowrap"><button class="btn sm primary" data-s>저장</button> <button class="btn sm" data-c>취소</button></td>`;
+      const save=async()=>{
+        const name=tr.querySelector('.eName').value.trim(), no=parseInt(tr.querySelector('.eNo').value,10)||null;
+        if(!name&&!no){ toast('번호나 이름을 입력해 주세요'); return; }
+        const data=Object.assign({},s,{name,no,updatedAt:Date.now()}); delete data.id;
+        try{ await stuCol.doc(s.id).set(data); editingStu=null; toast('수정했습니다. 기록에도 바뀐 이름이 반영됩니다'); }catch(e){ toast('수정하지 못했습니다'); }
+      };
+      tr.querySelector('[data-s]').onclick=save;
+      tr.querySelector('[data-c]').onclick=()=>{ editingStu=null; renderStudents(); };
+      tr.querySelectorAll('input').forEach(i=>i.onkeydown=e=>{ if(e.key==='Enter') save(); if(e.key==='Escape'){ editingStu=null; renderStudents(); } });
+      body.appendChild(tr); setTimeout(()=>tr.querySelector('.eName').focus(),0); return;
+    }
+    tr.innerHTML=`<td>${s.no||''}</td><td><input class="qName" data-id="${s.id}" value="${ngEsc(s.name||'')}" placeholder="이름 입력" style="padding:6px 8px"></td><td>${ng}건</td><td>${nc}건</td><td style="white-space:nowrap"><button class="btn sm" data-e>번호 수정</button> <button class="btn sm danger" data-d>삭제</button></td>`;
+    const q=tr.querySelector('.qName');
+    const qsave=async()=>{ const name=q.value.trim(); if(name===(s.name||'')) return;
+      const data=Object.assign({},s,{name,updatedAt:Date.now()}); delete data.id;
+      try{ await stuCol.doc(s.id).set(data); toast(`${s.no?s.no+'번 ':''}저장했습니다`); }catch(e){ toast('저장하지 못했습니다'); q.value=s.name||''; } };
+    q.onblur=qsave;
+    q.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); const all=[...body.querySelectorAll('.qName')]; const nx=all[all.indexOf(q)+1]; if(nx) nx.focus(); else q.blur(); } if(e.key==='Escape'){ q.value=s.name||''; q.blur(); } };
+    tr.querySelector('[data-e]').onclick=()=>{ editingStu=s.id; renderStudents(); };
+    tr.querySelector('[data-d]').onclick=async()=>{
+      if(ng||nc){ toast('기록이 있는 학생은 삭제할 수 없습니다'); return; }
+      if(!await confirmBox(`${nameOf(s)} 학생을 목록에서 삭제할까요?`)) return;
+      try{ await stuCol.doc(s.id).delete(); }catch(e){ toast('삭제하지 못했습니다'); }
+    };
+    body.appendChild(tr);
+  });
+}
+$('addStuBtn').onclick=async()=>{
+  if(!stuCol){ toast('저장소에 연결되지 않았습니다'); return; }
+  const name=$('sName').value.trim(), no=parseInt($('sNo').value,10)||null;
+  if(!name&&!no){ toast('번호나 이름을 입력해 주세요'); return; }
+  if(no&&students.some(s=>s.no===no)&&!await confirmBox(`${no}번 학생이 이미 있습니다. 그래도 추가할까요?`,'추가')) return;
+  try{ await stuCol.doc().set({name,no,year:YEAR,createdAt:Date.now()}); $('sName').value=''; $('sNo').value=''; toast('추가했습니다'); }catch(e){ toast('추가하지 못했습니다'); }
+};
+// ---- 이름 한꺼번에 넣기
+function parsePaste(){
+  const lines=$('pasteNames').value.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const order=sortedStudents(); let k=0; const plan=[];
+  for(const l of lines){
+    const mm=l.match(/^(\d{1,3})\s*(?:번)?[\s\t.,:)\-]*(.*)$/);
+    if(mm&&mm[2].trim()){ const no=+mm[1], name=mm[2].trim().split(/\t/)[0].trim(); plan.push({no,name,s:students.find(x=>x.no===no)}); }
+    else if(!/^\d+$/.test(l)){ const name=l.split(/\t/)[0].trim(); const s=order[k++]; plan.push(s?{no:s.no,name,s}:{no:null,name,s:null}); }
+  }
+  return plan;
+}
+function pastePreview(){ const p=parsePaste();
+  if(!p.length){ $('pastePreview').textContent=''; return; }
+  const upd=p.filter(x=>x.s).length, add=p.length-upd;
+  $('pastePreview').textContent=`${p.length}명 인식 · 이름 바꿈 ${upd}명`+(add?` · 새로 추가 ${add}명`:'')+'  (예: '+p.slice(0,3).map(x=>(x.no?x.no+'번 ':'')+x.name).join(', ')+(p.length>3?' …':'')+')'; }
+$('pasteNames').oninput=pastePreview;
+$('pasteBtn').onclick=async()=>{
+  if(!stuCol){ toast('저장소에 연결되지 않았습니다'); return; }
+  const p=parsePaste(); if(!p.length){ toast('붙여 넣은 이름이 없습니다'); return; }
+  const upd=p.filter(x=>x.s).length;
+  if(!await confirmBox(`${YEAR}학년도 명단에 ${p.length}명의 이름을 넣을까요?`+(upd?` 이미 있는 ${upd}명은 이름이 바뀝니다.`:''),'넣기')) return;
+  const btn=$('pasteBtn'); btn.disabled=true; let ok=0;
+  try{
+    for(const x of p){
+      if(x.s){ if((x.s.name||'')===x.name){ ok++; continue; } const data=Object.assign({},x.s,{name:x.name,updatedAt:Date.now()}); delete data.id; await stuCol.doc(x.s.id).set(data); }
+      else await stuCol.doc().set({name:x.name,no:x.no,year:YEAR,createdAt:Date.now()});
+      ok++;
+    }
+    toast(`${ok}명의 이름을 넣었습니다`); $('pasteNames').value=''; pastePreview();
+  }catch(e){ toast(`${ok}명까지 넣고 멈췄습니다. 다시 시도해 주세요`); }
+  finally{ btn.disabled=false; }
+};
+$('bulkBtn').onclick=async()=>{
+  if(!stuCol){ toast('저장소에 연결되지 않았습니다'); return; }
+  const a=parseInt($('bFrom').value,10), b=parseInt($('bTo').value,10);
+  if(!a||!b||b<a||b-a>50){ toast('번호 범위를 확인해 주세요'); return; }
+  const have=new Set(students.map(s=>s.no)); const todo=[]; for(let n=a;n<=b;n++) if(!have.has(n)) todo.push(n);
+  if(!todo.length){ toast('이미 모든 번호가 있습니다'); return; }
+  if(!await confirmBox(`${YEAR}학년도에 ${todo[0]}~${todo[todo.length-1]}번 중 없는 ${todo.length}명을 추가할까요?`,'추가')) return;
+  const btn=$('bulkBtn'); btn.disabled=true;
+  try{ for(const n of todo) await stuCol.doc().set({name:'',no:n,year:YEAR,createdAt:Date.now()}); toast(`${todo.length}명을 추가했습니다`); }
+  catch(e){ toast('일부를 추가하지 못했습니다'); } finally{ btn.disabled=false; }
+};
+
+// ===== 내보내기 =====
+function exportSet(m){
+  const sid=$(m+'-eStudent').value, from=$(m+'-eFrom').value, to=$(m+'-eTo').value;
+  const list=filtered(m,sid,from,to,'').reverse();
+  const dates=list.map(r=>r.date).filter(Boolean);
+  const period=(from||dates[0])&&(to||dates[dates.length-1])?`${ngFmtDate(from||dates[0])} ~ ${ngFmtDate(to||dates[dates.length-1])}`:'';
+  return {sid,list,period,target:YEAR+'학년도 '+(sid?stuLabel(sid):'전체 학생')};
+}
+function cStats(list){
+  const by={}; list.forEach(r=>{ by[r.method]=(by[r.method]||0)+1; });
+  const used=METHODS.filter(x=>by[x]>0); const cl=used.length?used:['대면 상담','전화 상담'];
+  const g={'학부모':0,'학생':0,'교사·기관':0}; list.forEach(r=>g[GROUP(r.target)]++);
+  return {cols:cl,counts:cl.map(x=>by[x]||0),total:list.length,students:new Set(list.map(r=>r.studentId)).size,groups:g};
+}
+function renderExportCount(m){
+  const s=exportSet(m), nStu=new Set(s.list.map(r=>r.studentId)).size;
+  $(m+'-eCount').textContent=`선택한 조건의 ${MODES[m].noun}: ${s.list.length}건 (학생 ${nStu}명)`;
+  if(m==='c'){ const st=cStats(s.list);
+    $('c-eStats').textContent=s.list.length?'대상별: '+Object.entries(st.groups).map(([k,v])=>`${k} ${v}건`).join(' · ')+'  /  방법별: '+st.cols.map((c,i)=>`${c} ${st.counts[i]}건`).join(' · '):''; }
+}
+function fileBase(m,s){ return `${MODES[m].filePrefix}_${YEAR}학년도_${(s.sid?stuLabel(s.sid):'전체').replace(/[\\/:*?"<>|\s]+/g,'_')}_${today().replace(/-/g,'')}`; }
+async function offer(filename,data){
+  if(!downloads){ toast('이 화면에서는 파일 저장을 쓸 수 없습니다'); return; }
+  try{ await downloads.save({filename,data}); toast('파일을 저장했습니다'); }
+  catch(e){ const c=e&&e.code; if(c==='declined') return; toast(c==='rate_limited'?'잠시 후 다시 시도해 주세요':'파일을 저장하지 못했습니다'); }
+}
+async function exportDocx(m){
+  const s=exportSet(m); if(!s.list.length){ toast('내보낼 기록이 없습니다'); return; }
+  const n=s.list.length, all=!s.sid, teacher=$(m+'-eTeacher').value.trim(), F=MODES[m].fields;
+  let opts;
+  if(m==='g'){
+    const W=9638, ws=all?[900,1700,1500,W-4100]:[900,1700,W-2600];
+    opts={ infoRows:[['대상 학생',s.target],['기록 기간',s.period],['기록 건수',n+'건'],['작성자',teacher]],
+      index:{title:`기록 목록 (총 ${n}건, 날짜순)`,widths:ws,head:['순번','날짜'].concat(all?['학생']:[],['유형']),
+        rows:s.list.map((r,i)=>[`${i+1} / ${n}`,ngFmtDate(r.date)||'날짜 미기재'].concat(all?[stuLabel(r.studentId)]:[],[(r.types||[]).join(', ')||'-']))},
+      records:s.list.map((r,i)=>({head:`[${i+1} / ${n}]  ${ngFmtDate(r.date)||'날짜 미기재'}${r.time?'  '+r.time:''}`,
+        rows:[].concat(all?[['학생',stuLabel(r.studentId)]]:[],[['장소',r.place||''],['유형',(r.types||[]).join(', ')]],F.map(f=>[f[1],r[f[0]]||'']))})),
+      closing:'위 기록은 사실과 다름없음을 확인합니다.' };
+  } else {
+    const st=cStats(s.list), k=st.cols.length+2, w=Math.floor(9638/k), widths=Array(k).fill(w); widths[k-1]=9638-w*(k-1);
+    const iw=all?[900,1600,1300,1500,9638-5300]:[900,1700,1700,9638-4300];
+    opts={ infoRows:[['대상 학생',s.target],['상담 기간',s.period],['상담 건수',`${n}건${all?' (학생 '+st.students+'명)':''}`],['대상별 건수',Object.entries(st.groups).map(([a,b])=>`${a} ${b}건`).join(', ')],['작성자',teacher]],
+      summary:{title:'상담 실적',head:['구분'].concat(st.cols,['합계']),rows:[['건수'].concat(st.counts,[st.total])],widths},
+      index:{title:`상담 목록 (총 ${n}건, 날짜순)`,widths:iw,head:['순번','날짜'].concat(all?['학생']:[],['방법','상담 대상']),
+        rows:s.list.map((r,i)=>[`${i+1} / ${n}`,ngFmtDate(r.date)||'날짜 미기재'].concat(all?[stuLabel(r.studentId)]:[],[r.method||'',r.target||'']))},
+      records:s.list.map((r,i)=>({head:`[${i+1} / ${n}]  ${ngFmtDate(r.date)||'날짜 미기재'}${r.time?'  '+r.time:''}  ·  ${r.method||''}`,
+        rows:[].concat(all?[['학생',stuLabel(r.studentId)]]:[],[['상담 대상',r.target||''],['요청자',r.requester||''],['장소',r.place||''],['상담 주제',(r.types||[]).join(', ')]],F.map(f=>[f[1],r[f[0]]||'']))})),
+      closing:'위 상담 기록은 사실과 다름없음을 확인합니다.' };
+  }
+  opts.title=$(m+'-eTitle').value.trim()||MODES[m].docTitle; opts.today=ngFmtDate(today()); opts.signer=teacher;
+  try{ const bytes=await ngBuildDocx(opts); offer(fileBase(m,s)+'.docx',new Blob([bytes])); }catch(e){ toast('파일을 만들지 못했습니다'); }
+}
+function exportXlsx(m){
+  const s=exportSet(m); if(!s.list.length){ toast('내보낼 기록이 없습니다'); return; }
+  const F=MODES[m].fields, n=s.list.length, wb=XLSX.utils.book_new();
+  if(m==='g'){
+    const head=['연번','날짜','시간/교시','학생','장소','유형'].concat(F.map(f=>f[1]),['최종 수정']);
+    const rows=[head].concat(s.list.map((r,i)=>[`${i+1} / ${n}`,r.date||'',r.time||'',stuLabel(r.studentId),r.place||'',(r.types||[]).join(', ')].concat(F.map(f=>r[f[0]]||''),[nowLabel(r.updatedAt)])),[[],[`총 ${n}건`]]);
+    const ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[9,12,10,12,10,18,45,35,45,35,35,16].map(w=>({wch:w}));
+    XLSX.utils.book_append_sheet(wb,ws,'누가기록');
+  } else {
+    const head=['연번','날짜','시간','학생','상담 방법','상담 대상','대상 구분','요청자','장소','상담 주제'].concat(F.map(f=>f[1]),['최종 수정']);
+    const rows=[head].concat(s.list.map((r,i)=>[`${i+1} / ${n}`,r.date||'',r.time||'',stuLabel(r.studentId),r.method||'',r.target||'',GROUP(r.target),r.requester||'',r.place||'',(r.types||[]).join(', ')].concat(F.map(f=>r[f[0]]||''),[nowLabel(r.updatedAt)])),[[],[`총 ${n}건`]]);
+    const ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[9,12,12,12,12,10,9,10,12,18,45,35,35,30,30,16].map(w=>({wch:w}));
+    const st=cStats(s.list), byMonth={};
+    s.list.forEach(r=>{ const mo=(r.date||'').slice(0,7)||'날짜 없음'; byMonth[mo]=byMonth[mo]||{}; byMonth[mo][r.method]=(byMonth[mo][r.method]||0)+1; });
+    const srows=[['월'].concat(st.cols,['합계'])].concat(Object.keys(byMonth).sort().map(mo=>{ const c=st.cols.map(x=>byMonth[mo][x]||0); return [mo].concat(c,[c.reduce((a,b)=>a+b,0)]); }),[['합계'].concat(st.counts,[st.total])]);
+    const ws2=XLSX.utils.aoa_to_sheet(srows); ws2['!cols']=[{wch:12}].concat(st.cols.map(()=>({wch:14})),[{wch:8}]);
+    XLSX.utils.book_append_sheet(wb,ws,'상담 목록'); XLSX.utils.book_append_sheet(wb,ws2,'상담 실적');
+  }
+  offer(fileBase(m,s)+'.xlsx',XLSX.write(wb,{bookType:'xlsx',type:'array'}));
+}
+
+// ===== 이 브라우저 저장소 (localStorage) =====
+const LS_KEY='nugarok-hub-v1', KEY_KEY='nugarok-hub-apikey', MODEL_KEY='nugarok-hub-model';
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } }
+function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+const LocalDB=(()=>{
+  let data={students:{},guidance:{},counsel:{}};
+  try{ const raw=lsGet(LS_KEY); if(raw){ const d=JSON.parse(raw); if(d&&typeof d==='object') data=Object.assign(data,d); } }catch(e){}
+  const subs={};
+  function persist(){ if(!lsSet(LS_KEY,JSON.stringify(data))){ const e=new Error('quota'); e.code='quota_exceeded'; throw e; } }
+  function fire(name){ const docs=Object.entries(data[name]||{}).map(([id,d])=>({id,data:()=>d})); (subs[name]||[]).forEach(cb=>cb({docs,metadata:{fromCache:false}})); }
+  function newId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+  function collection(name){ data[name]=data[name]||{}; return {
+    doc(id){ id=id||newId(); return { id,
+      async set(d){ const prev=data[name][id]; data[name][id]=JSON.parse(JSON.stringify(d)); try{ persist(); }catch(e){ if(prev) data[name][id]=prev; else delete data[name][id]; throw e; } fire(name); },
+      async delete(){ const prev=data[name][id]; delete data[name][id]; try{ persist(); }catch(e){ data[name][id]=prev; throw e; } fire(name); } }; },
+    onSnapshot(cb){ (subs[name]=subs[name]||[]).push(cb); setTimeout(()=>fire(name),0); } }; }
+  // 다른 탭에서 바뀌면 이 탭에도 반영
+  window.addEventListener('storage',e=>{ if(e.key!==LS_KEY) return; try{ const d=JSON.parse(e.newValue||'{}'); data=Object.assign({students:{},guidance:{},counsel:{}},d); Object.keys(subs).forEach(fire); }catch(err){} });
+  return { collection, dump:()=>JSON.parse(JSON.stringify(data)),
+    replace(d){ data={students:{},guidance:{},counsel:{}}; ['students','guidance','counsel'].forEach(k=>{ data[k]=Object.assign({},(d&&d[k])||{}); }); persist(); Object.keys(subs).forEach(fire); },
+    hasRecords:()=>Object.keys(data.guidance||{}).length+Object.keys(data.counsel||{}).length>0,
+    merge(d){ ['students','guidance','counsel'].forEach(k=>{ data[k]=Object.assign({},data[k]||{},(d&&d[k])||{}); }); persist(); Object.keys(subs).forEach(fire); },
+    isEmpty:()=>!Object.keys(data.students||{}).length&&!Object.keys(data.guidance||{}).length&&!Object.keys(data.counsel||{}).length };
+})();
+
+// ===== 파일 내려받기 =====
+const LocalDownloads={ async save({filename,data}){
+  const blob=data instanceof Blob?data:new Blob([data]); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000); } };
+
+// ===== AI 정리 (선생님이 설정에서 넣은 키로 Anthropic API 호출) =====
+const LocalSample={ async json(prompt){
+  const key=(lsGet(KEY_KEY)||'').trim();
+  if(!key){ const e=new Error('no key'); e.code='no_key'; throw e; }
+  let res;
+  try{ res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:lsGet(MODEL_KEY)||'claude-sonnet-5-5',max_tokens:2000,messages:[{role:'user',content:prompt}]})}); }
+  catch(e){ const er=new Error('network'); er.code='network'; throw er; }
+  if(!res.ok){ const er=new Error('http '+res.status); er.code=res.status===401||res.status===403?'bad_key':res.status===429||res.status===529?'rate_limited':res.status===400?'bad_request':'error'; throw er; }
+  const out=await res.json(); const text=(out.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+  const s=text.indexOf('{'), e=text.lastIndexOf('}'); if(s<0||e<s) throw new Error('no json');
+  return JSON.parse(text.slice(s,e+1)); } };
+
+// ===== 설정·백업 화면 =====
+function renderSettings(){
+  const k=lsGet(KEY_KEY);
+  $('keyState').textContent=k?`AI 키가 이 브라우저에 저장되어 있습니다 (끝자리 …${k.slice(-4)}).`:'AI 키가 아직 없습니다. 키를 넣기 전에는 ‘AI로 정리하기’ 대신 직접 입력해야 합니다.';
+  $('modelSel').value=lsGet(MODEL_KEY)||'claude-sonnet-5-5';
+  const d=LocalDB.dump(); $('dataState').textContent=`이 브라우저에 저장된 기록: 학생 ${Object.keys(d.students).length}명 · 생활지도 ${Object.keys(d.guidance).length}건 · 상담 ${Object.keys(d.counsel).length}건`;
+  const last=lsGet('nugarok-hub-lastbackup'); $('backupState').textContent=last?`마지막 백업: ${nowLabel(+last)}`:'아직 백업한 적이 없습니다.';
+}
+$('keySave').onclick=()=>{ const v=$('keyInput').value.trim(); if(!v){ toast('키를 붙여 넣어 주세요'); return; }
+  lsSet(KEY_KEY,v); $('keyInput').value=''; toast('AI 키를 저장했습니다'); renderSettings(); };
+$('keyDel').onclick=async()=>{ if(!lsGet(KEY_KEY)) return; if(!await confirmBox('이 브라우저에서 AI 키를 지울까요?')) return; lsDel(KEY_KEY); toast('AI 키를 지웠습니다'); renderSettings(); };
+$('keyTest').onclick=async()=>{ $('keyState').textContent='확인하는 중…';
+  try{ await LocalSample.json('다음 JSON을 그대로 출력하라: {"ok":true}'); toast('AI 키가 잘 작동합니다'); renderSettings(); }
+  catch(e){ renderSettings(); $('keyState').textContent=aiErrMsg(e&&e.code); } };
+$('modelSel').onchange=e=>{ lsSet(MODEL_KEY,e.target.value); toast('모델을 바꿨습니다'); };
+$('backupBtn').onclick=async()=>{
+  const payload={app:'nugarok-hub',version:1,exportedAt:new Date().toISOString(),data:LocalDB.dump()};
+  await LocalDownloads.save({filename:`생활지도상담기록_백업_${today().replace(/-/g,'')}.json`,data:new Blob([JSON.stringify(payload,null,1)],{type:'application/json'})});
+  lsSet('nugarok-hub-lastbackup',String(Date.now())); renderSettings(); toast('백업 파일을 내려받았습니다'); };
+$('restoreFile').onchange=async e=>{
+  const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ const j=JSON.parse(await f.text()); const d=j&&j.data;
+    if(!d||typeof d!=='object'||!d.students){ toast('이 프로그램의 백업 파일이 아닙니다'); return; }
+    const n=k=>Object.keys(d[k]||{}).length;
+    const fresh=!LocalDB.hasRecords();
+    if(!await confirmBox(`백업 파일(학생 ${n('students')}명, 생활지도 ${n('guidance')}건, 상담 ${n('counsel')}건)을 불러올까요? `+(fresh?'지금 이 브라우저의 학생 명단은 백업 내용으로 바뀝니다.':'같은 기록은 백업 내용으로 바뀌고, 지금 있는 다른 기록은 그대로 남습니다.'),'불러오기')) return;
+    if(fresh) LocalDB.replace(d); else LocalDB.merge(d); toast('백업을 불러왔습니다'); renderSettings(); }
+  catch(err){ toast(err&&err.code==='quota_exceeded'?'저장 공간이 부족합니다':'파일을 읽지 못했습니다'); } };
+function aiErrMsg(c){
+  return c==='no_key'?'AI 키가 없습니다. ‘설정·백업’에서 키를 넣으면 쓸 수 있습니다. 지금은 직접 입력해 주세요.'
+    : c==='bad_key'?'AI 키가 올바르지 않거나 사용할 수 없습니다. ‘설정·백업’에서 키를 확인해 주세요.'
+    : c==='rate_limited'?'요청이 많습니다. 잠시 후 다시 눌러 주세요.'
+    : c==='network'?'인터넷 연결을 확인해 주세요.'
+    : c==='bad_request'?'요청을 처리하지 못했습니다. 크레딧이 남아 있는지, 모델 설정이 맞는지 확인해 주세요.'
+    : '정리하지 못했습니다. 다시 시도하거나 직접 입력해 주세요.'; }
+
+// ===== 시작 =====
+$('yearSel').onchange=e=>{ YEAR=+e.target.value; resetForm('g'); resetForm('c'); refreshAll(); toast(YEAR+'학년도 기록을 보고 있습니다'); };
+buildUI(); resetForm('g'); resetForm('c'); renderYearSel(); fillStudentSelects(); show();
+(async()=>{
+  const notice=$('connNotice');
+  sample=LocalSample; downloads=LocalDownloads; db=LocalDB;
+  try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist(); }catch(e){}
+  if(lsGet('__t')===null&&!lsSet('__t','1')){ notice.className='notice warn'; notice.textContent='이 브라우저에서는 저장할 수 없습니다. 시크릿 창이 아닌 일반 창에서 열어 주세요.'; return; }
+  // 처음 열 때 우리 반 번호(3~17번) 미리 넣기
+  if(LocalDB.isEmpty()&&!lsGet('nugarok-hub-seeded')){
+    const sc=LocalDB.collection('students'); for(let n=3;n<=17;n++) await sc.doc().set({name:'',no:n,year:2026,createdAt:Date.now()});
+    lsSet('nugarok-hub-seeded','1');
+  }
+  stuCol=LocalDB.collection('students'); cols.g=LocalDB.collection('guidance'); cols.c=LocalDB.collection('counsel');
+  notice.className='notice'; notice.innerHTML='기록은 <b>이 컴퓨터의 이 브라우저에만</b> 저장됩니다. 다른 기기로 옮기거나 잃어버리지 않으려면 ‘설정·백업’에서 백업 파일을 자주 내려받아 두세요.';
+  stuCol.onSnapshot(snap=>{ allStudents=snap.docs.map(x=>Object.assign({id:x.id},x.data())); refreshAll(); });
+  ['g','c'].forEach(m=>cols[m].onSnapshot(snap=>{ S[m].all=snap.docs.map(x=>Object.assign({id:x.id},x.data())); refreshAll(); }));
+})();
+</script>
+</body>
+</html>
