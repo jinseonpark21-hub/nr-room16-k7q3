@@ -65,6 +65,9 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent-soft);bor
 .kind{border-radius:6px;padding:1px 8px;font-size:12.5px;font-weight:700}
 .kind.g{background:var(--accent-soft);color:var(--accent)}
 .kind.c{background:var(--blue-soft);color:var(--blue)}
+.kind.cp{background:#e6eef7;color:#2f5a8a}
+.kind.cs{background:#efe8f6;color:#6b3f8f}
+.kind.ct{background:var(--chip);color:var(--muted)}
 .tag{background:var(--chip);border-radius:6px;padding:1px 7px;font-size:12px;color:var(--muted)}
 .rec dl{display:grid;grid-template-columns:110px 1fr;gap:4px 10px;margin:8px 0 0;font-size:14px}
 .rec dt{color:var(--muted);font-weight:500}
@@ -149,7 +152,7 @@ table.stu th{color:var(--muted);font-weight:500;font-size:13px}
         <div><label for="c-requester">요청자</label>
           <select id="c-requester"><option>교사 요청</option><option>보호자 요청</option><option>학생 요청</option><option>기타</option></select></div>
         <div><label for="c-target">상담 대상</label>
-          <select id="c-target"><option>어머니</option><option>아버지</option><option>부모 모두</option><option>조부모</option><option>기타 보호자</option><option>학생 본인</option><option>교내 상담교사</option><option>관계 교사·기관</option></select></div>
+          <select id="c-target"><option>어머니</option><option>아버지</option><option>부모 모두</option><option>보호자</option><option>조부모</option><option>기타 보호자</option><option>학생 본인</option><option>교내 상담교사</option><option>관계 교사·기관</option></select></div>
         <div><label for="c-place">장소 (선택)</label><input id="c-place" placeholder="예: 6학년 교실, 상담실"></div>
         <div class="span4"><label>상담 주제</label><div class="chips" id="c-types"></div></div>
         <div class="span4">
@@ -179,7 +182,7 @@ table.stu th{color:var(--muted);font-weight:500;font-size:13px}
     <div class="card">
       <div class="grid">
         <div class="span2"><label for="v-student">학생</label><select id="v-student"></select></div>
-        <div class="span2"><label for="v-kind">보기</label><select id="v-kind"><option value="">생활지도 + 상담 모두</option><option value="g">생활지도 누가기록만</option><option value="c">상담 기록만</option></select></div>
+        <div class="span2"><label for="v-kind">보기</label><select id="v-kind"><option value="">생활지도 + 상담 모두</option><option value="g">생활지도 누가기록만</option><option value="cp">학부모 상담만</option><option value="cs">학생 상담만</option><option value="c">상담 기록만</option></select></div>
         <div class="span2"><label for="v-sort">정렬</label><select id="v-sort"><option value="new">최근순 (새 기록이 위)</option><option value="old">오래된순 (처음 기록이 위)</option></select></div>
       </div>
       <div class="stat" id="v-stat"></div>
@@ -264,15 +267,15 @@ function ngFmtDate(d){ if(!d) return ''; const p=String(d).split('-'); if(p.leng
 function ngBuildDocumentXml(opts){
   const W=9638, L=1900, R=W-L; let body='';
   body+=ngPara(opts.title||'',{bold:true,size:32,align:'center',after:240});
-  body+=ngTable((opts.infoRows||[]).map(x=>ngCell(x[0],L,{bold:true,shade:'EEF2F6',align:'center'})+ngCell(x[1],R)),[L,R]);
+  body+=ngTable((opts.infoRows||[]).filter(x=>String(x[1]==null?'':x[1]).trim()).map(x=>ngCell(x[0],L,{bold:true,shade:'EEF2F6',align:'center'})+ngCell(x[1],R)),[L,R]);
   [opts.summary,opts.index].forEach((t,k)=>{ if(!t||!t.rows||!t.rows.length) return;
     body+=ngPara('',{after:120}); body+=ngPara(t.title||'',{bold:true,size:21,after:80});
     const ws=t.widths; const rows=[t.head.map((h,i)=>ngCell(h,ws[i],{bold:true,shade:'EEF2F6',align:'center'})).join('')];
     t.rows.forEach(r=>rows.push(r.map((v,i)=>ngCell(String(v),ws[i],{align:(k===0||i<2)?'center':'left'})).join('')));
     body+=ngTable(rows,ws); });
-  (opts.records||[]).forEach(r=>{ body+=ngPara('',{after:120});
+  (opts.records||[]).forEach(r=>{ if(r.section){ body+=ngPara('',{after:120}); body+=ngPara(r.section,{bold:true,size:24,before:120,after:80}); } body+=ngPara('',{after:120});
     const rows=[ngCell(r.head,W,{span:2,bold:true,shade:'DCE6F0'})];
-    r.rows.forEach(x=>rows.push(ngCell(x[0],L,{bold:true,shade:'F5F7FA',align:'center'})+ngCell(x[1]||'-',R)));
+    r.rows.filter(x=>String(x[1]==null?'':x[1]).trim()).forEach(x=>rows.push(ngCell(x[0],L,{bold:true,shade:'F5F7FA',align:'center'})+ngCell(x[1],R)));
     body+=ngTable(rows,[L,R]); });
   body+=ngPara('',{after:240});
   body+=ngPara(opts.closing||'위 기록은 사실과 다름없음을 확인합니다.',{align:'center',size:21,before:240,after:200});
@@ -305,6 +308,8 @@ const MODES = {
       fields:[['summary','상담 내용',4],['parentView','상담 대상 의견·요청',3],['advice','교사 안내·조언',3],['agree','합의 사항',2],['followup','후속 조치',2]] }
 };
 const METHODS=['대면 상담','전화 상담','문자·하이톡','온라인(화상) 상담','가정 방문','기타','미기재'];
+const KIND_ORDER=['학부모 상담','학생 상담','교사·기관 상담'];
+const cKind=r=>{ const g=GROUP(r.target); return g==='학생'?'학생 상담':g==='학부모'?'학부모 상담':'교사·기관 상담'; };
 const GROUP=t=> t==='학생 본인'?'학생' : (t==='교내 상담교사'||t==='관계 교사·기관')?'교사·기관':'학부모';
 
 const $=id=>document.getElementById(id);
@@ -375,18 +380,20 @@ function buildUI(){
       <div><label for="${m}-lFrom">시작일</label><input type="date" id="${m}-lFrom"></div>
       <div><label for="${m}-lTo">종료일</label><input type="date" id="${m}-lTo"></div>
       <div class="span2"><label for="${m}-lSearch">검색</label><input id="${m}-lSearch" placeholder="내용 검색"></div>
+      ${m==='c'?`<div class="span2"><label for="c-lKind">구분</label><select id="c-lKind"><option value="">학부모 + 학생 상담 모두</option><option>학부모 상담</option><option>학생 상담</option><option>교사·기관 상담</option></select></div>`:''}
       <div class="span2"><label for="${m}-lSort">정렬</label><select id="${m}-lSort"><option value="new">최근순 (새 기록이 위)</option><option value="old">오래된순 (처음 기록이 위)</option></select></div></div></div><div id="${m}-listBox"></div>`;
     $(`sec-${m}-export`).innerHTML=`<div class="card"><h2>${m==='g'?'증빙 파일 만들기':'상담 실적 · 증빙 파일 만들기'}</h2><div class="grid">
       <div class="span2"><label for="${m}-eStudent">학생</label><select id="${m}-eStudent"></select></div>
       <div><label for="${m}-eFrom">시작일</label><input type="date" id="${m}-eFrom"></div>
       <div><label for="${m}-eTo">종료일</label><input type="date" id="${m}-eTo"></div>
       <div class="span2"><label for="${m}-eTeacher">작성자 (선택)</label><input id="${m}-eTeacher" placeholder="예: 6학년 ○반 담임 ○○○"></div>
-      <div class="span2"><label for="${m}-eTitle">문서 제목</label><input id="${m}-eTitle" value="${M.docTitle}"></div></div>
+      <div class="span2"><label for="${m}-eTitle">문서 제목</label><input id="${m}-eTitle" value="${M.docTitle}"></div>
+      ${m==='c'?`<div class="span4"><label for="c-eKind">구분</label><select id="c-eKind"><option value="">학부모 상담 + 학생 상담 (구분별로 나눠서)</option><option>학부모 상담</option><option>학생 상담</option><option>교사·기관 상담</option></select></div>`:''}</div>
       <p class="hint" id="${m}-eCount"></p><div class="hint" id="${m}-eStats"></div>
       <div class="row" style="margin-top:10px"><button class="btn primary" id="${m}-docx">워드 파일 (.docx)</button><button class="btn primary" id="${m}-xlsx">엑셀 파일 (.xlsx)</button></div>
       <p class="hint">워드 파일은 한글(HWP)에서도 열립니다. 한글에서 연 뒤 ‘다른 이름으로 저장’에서 .hwp 형식을 고르면 한글 파일로 바꿀 수 있습니다. ${m==='g'?'워드 파일은 서명란이 있는 제출용 서식, 엑셀 파일은 표로 정리한 목록입니다.':'워드 파일은 상담 실적표와 서명란이 있는 제출용 서식, 엑셀 파일은 상담 목록과 월별 실적 시트로 되어 있습니다.'}</p></div>`;
-    ['lStudent','lFrom','lTo','lSort'].forEach(i=>$(`${m}-${i}`).onchange=()=>renderList(m)); $(`${m}-lSearch`).oninput=()=>renderList(m);
-    ['eStudent','eFrom','eTo'].forEach(i=>$(`${m}-${i}`).onchange=()=>renderExportCount(m));
+    ['lStudent','lFrom','lTo','lSort'].forEach(i=>$(`${m}-${i}`).onchange=()=>renderList(m)); if(m==='c') $('c-lKind').onchange=()=>renderList('c'); $(`${m}-lSearch`).oninput=()=>renderList(m);
+    ['eStudent','eFrom','eTo'].forEach(i=>$(`${m}-${i}`).onchange=()=>renderExportCount(m)); if(m==='c') $('c-eKind').onchange=()=>{ const k=$('c-eKind').value; $('c-eTitle').value=k?k+' 기록부':MODES.c.docTitle; renderExportCount('c'); };
     $(`${m}-docx`).onclick=()=>exportDocx(m); $(`${m}-xlsx`).onclick=()=>exportXlsx(m);
     $(`${m}-reset`).onclick=()=>resetForm(m); $(`${m}-save`).onclick=()=>saveRecord(m); $(`${m}-ai`).onclick=()=>aiFill(m);
   });
@@ -558,12 +565,13 @@ function metaLine(m,r){ return m==='g' ? [r.time,r.place].filter(Boolean).join('
 function recCard(m,r,withKind){
   const el=document.createElement('div'); el.className='rec';
   const rows=MODES[m].fields.filter(f=>r[f[0]]).map(f=>`<dt>${f[1]}</dt><dd>${ngEsc(r[f[0]])}</dd>`).join('');
-  el.innerHTML=`<div class="top">${withKind?`<span class="kind ${m}">${MODES[m].short}</span>`:''}<span class="date">${ngFmtDate(r.date)}</span><span class="status">${ngEsc(metaLine(m,r))}</span><span class="who">${ngEsc(stuLabel(r.studentId))}</span>${(r.types||[]).map(t=>`<span class="tag">${ngEsc(t)}</span>`).join('')}<span class="spacer"></span><button class="btn sm" data-e>수정</button><button class="btn sm danger" data-d>삭제</button></div><dl>${rows||'<dt>메모</dt><dd>'+ngEsc(r.memo||'')+'</dd>'}</dl>`;
+  el.innerHTML=`<div class="top">${m==='c'?`<span class="kind ${{'학부모 상담':'cp','학생 상담':'cs'}[cKind(r)]||'ct'}">${cKind(r)}</span>`:withKind?`<span class="kind ${m}">${MODES[m].short}</span>`:''}<span class="date">${ngFmtDate(r.date)}</span><span class="status">${ngEsc(metaLine(m,r))}</span><span class="who">${ngEsc(stuLabel(r.studentId))}</span>${(r.types||[]).map(t=>`<span class="tag">${ngEsc(t)}</span>`).join('')}<span class="spacer"></span><button class="btn sm" data-e>수정</button><button class="btn sm danger" data-d>삭제</button></div><dl>${rows||'<dt>메모</dt><dd>'+ngEsc(r.memo||'')+'</dd>'}</dl>`;
   el.querySelector('[data-e]').onclick=()=>editRecord(m,r.id); el.querySelector('[data-d]').onclick=()=>deleteRecord(m,r.id);
   return el;
 }
 function renderList(m){
   let list=filtered(m,$(m+'-lStudent').value,$(m+'-lFrom').value,$(m+'-lTo').value,$(m+'-lSearch').value.trim());
+  if(m==='c'&&$('c-lKind').value) list=list.filter(r=>cKind(r)===$('c-lKind').value);
   if($(m+'-lSort').value==='old') list=list.reverse();
   const box=$(m+'-listBox');
   if(!list.length){ box.innerHTML=`<div class="card empty">${MODES[m].noun}이 없습니다.</div>`; return; }
@@ -575,8 +583,10 @@ function renderView(){
   const sid=$('v-student').value, kind=$('v-kind').value, box=$('v-box');
   if(!sid){ $('v-stat').innerHTML=''; box.innerHTML='<div class="card empty">학생을 선택해 주세요.</div>'; return; }
   const g=S.g.recs.filter(r=>r.studentId===sid), c=S.c.recs.filter(r=>r.studentId===sid);
-  $('v-stat').innerHTML=`<span>생활지도 <b>${g.length}</b>건</span><span>상담 <b>${c.length}</b>건</span>`;
-  const items=[].concat(kind!=='c'?g.map(r=>['g',r]):[], kind!=='g'?c.map(r=>['c',r]):[])
+  const cp=c.filter(r=>cKind(r)==='학부모 상담'), cs=c.filter(r=>cKind(r)==='학생 상담'), ct=c.filter(r=>cKind(r)==='교사·기관 상담');
+  $('v-stat').innerHTML=`<span>생활지도 <b>${g.length}</b>건</span><span>학부모 상담 <b>${cp.length}</b>건</span><span>학생 상담 <b>${cs.length}</b>건</span>`+(ct.length?`<span>교사·기관 상담 <b>${ct.length}</b>건</span>`:'');
+  const cSel = kind==='cp'?cp : kind==='cs'?cs : kind==='c'?c : kind===''?c : [];
+  const items=[].concat((kind===''||kind==='g')?g.map(r=>['g',r]):[], cSel.map(r=>['c',r]))
     .sort((a,b)=>(b[1].date||'').localeCompare(a[1].date||'')||(b[1].createdAt||0)-(a[1].createdAt||0));
   if($('v-sort').value==='old') items.reverse();
   if(!items.length){ box.innerHTML='<div class="card empty">이 학생의 기록이 없습니다.</div>'; return; }
@@ -683,10 +693,12 @@ $('bulkBtn').onclick=async()=>{
 // ===== 내보내기 =====
 function exportSet(m){
   const sid=$(m+'-eStudent').value, from=$(m+'-eFrom').value, to=$(m+'-eTo').value;
-  const list=filtered(m,sid,from,to,'').reverse();
-  const dates=list.map(r=>r.date).filter(Boolean);
+  let list=filtered(m,sid,from,to,'').reverse();
+  const kind=m==='c'?$('c-eKind').value:'';
+  if(m==='c'){ if(kind) list=list.filter(r=>cKind(r)===kind); else list=KIND_ORDER.flatMap(k=>list.filter(r=>cKind(r)===k)); }
+  const dates=list.map(r=>r.date).filter(Boolean).sort();
   const period=(from||dates[0])&&(to||dates[dates.length-1])?`${ngFmtDate(from||dates[0])} ~ ${ngFmtDate(to||dates[dates.length-1])}`:'';
-  return {sid,list,period,target:YEAR+'학년도 '+(sid?stuLabel(sid):'전체 학생')};
+  return {sid,list,period,kind,target:YEAR+'학년도 '+(sid?stuLabel(sid):'전체 학생')};
 }
 function cStats(list){
   const by={}; list.forEach(r=>{ by[r.method]=(by[r.method]||0)+1; });
@@ -698,9 +710,9 @@ function renderExportCount(m){
   const s=exportSet(m), nStu=new Set(s.list.map(r=>r.studentId)).size;
   $(m+'-eCount').textContent=`선택한 조건의 ${MODES[m].noun}: ${s.list.length}건 (학생 ${nStu}명)`;
   if(m==='c'){ const st=cStats(s.list);
-    $('c-eStats').textContent=s.list.length?'대상별: '+Object.entries(st.groups).map(([k,v])=>`${k} ${v}건`).join(' · ')+'  /  방법별: '+st.cols.map((c,i)=>`${c} ${st.counts[i]}건`).join(' · '):''; }
+    $('c-eStats').innerHTML=s.list.length?KIND_ORDER.map(k=>{ const l=s.list.filter(r=>cKind(r)===k); if(!l.length) return ''; const t=cStats(l); return `<b>${k} ${l.length}건</b> (${t.cols.map((c,i)=>`${c} ${t.counts[i]}`).join(' · ')})`; }).filter(Boolean).join('<br>'):''; }
 }
-function fileBase(m,s){ return `${MODES[m].filePrefix}_${YEAR}학년도_${(s.sid?stuLabel(s.sid):'전체').replace(/[\\/:*?"<>|\s]+/g,'_')}_${today().replace(/-/g,'')}`; }
+function fileBase(m,s){ return `${MODES[m].filePrefix}${s.kind?'_'+s.kind.replace(/\s/g,''):''}_${YEAR}학년도_${(s.sid?stuLabel(s.sid):'전체').replace(/[\\/:*?"<>|\s]+/g,'_')}_${today().replace(/-/g,'')}`; }
 async function offer(filename,data){
   if(!downloads){ toast('이 화면에서는 파일 저장을 쓸 수 없습니다'); return; }
   try{ await downloads.save({filename,data}); toast('파일을 저장했습니다'); }
@@ -720,13 +732,18 @@ async function exportDocx(m){
       closing:'위 기록은 사실과 다름없음을 확인합니다.' };
   } else {
     const st=cStats(s.list), k=st.cols.length+2, w=Math.floor(9638/k), widths=Array(k).fill(w); widths[k-1]=9638-w*(k-1);
-    const iw=all?[900,1600,1300,1500,9638-5300]:[900,1700,1700,9638-4300];
-    opts={ infoRows:[['대상 학생',s.target],['상담 기간',s.period],['상담 건수',`${n}건${all?' (학생 '+st.students+'명)':''}`],['대상별 건수',Object.entries(st.groups).map(([a,b])=>`${a} ${b}건`).join(', ')],['작성자',teacher]],
-      summary:{title:'상담 실적',head:['구분'].concat(st.cols,['합계']),rows:[['건수'].concat(st.counts,[st.total])],widths},
-      index:{title:`상담 목록 (총 ${n}건, 날짜순)`,widths:iw,head:['순번','날짜'].concat(all?['학생']:[],['방법','상담 대상']),
-        rows:s.list.map((r,i)=>[`${i+1} / ${n}`,ngFmtDate(r.date)||'날짜 미기재'].concat(all?[stuLabel(r.studentId)]:[],[r.method||'',r.target||'']))},
-      records:s.list.map((r,i)=>({head:`[${i+1} / ${n}]  ${ngFmtDate(r.date)||'날짜 미기재'}${r.time?'  '+r.time:''}  ·  ${r.method||''}`,
-        rows:[].concat(all?[['학생',stuLabel(r.studentId)]]:[],[['상담 대상',r.target||''],['요청자',r.requester||''],['장소',r.place||''],['상담 주제',(r.types||[]).join(', ')]],F.map(f=>[f[1],r[f[0]]||'']))})),
+    const kinds=KIND_ORDER.filter(x=>s.list.some(r=>cKind(r)===x));
+    const byKind=x=>s.list.filter(r=>cKind(r)===x);
+    const iw=all?[900,1300,1500,1300,1300,9638-6300]:[900,1500,1700,1500,9638-5600];
+    let lastKind='';
+    opts={ infoRows:[['대상 학생',s.target],['상담 기간',s.period],['상담 건수',`${n}건${all?' (학생 '+st.students+'명)':''}`],['구분별 건수',kinds.map(x=>`${x} ${byKind(x).length}건`).join(', ')],['작성자',teacher]],
+      summary:{title:'상담 실적 (구분별)',head:['구분'].concat(st.cols,['합계']),widths,
+        rows:kinds.map(x=>{ const l=byKind(x); return [x].concat(st.cols.map(c=>l.filter(r=>r.method===c).length),[l.length]); }).concat(kinds.length>1?[['합계'].concat(st.counts,[st.total])]:[])},
+      index:{title:`상담 목록 (총 ${n}건, 구분별·날짜순)`,widths:iw,head:['순번','구분','날짜'].concat(all?['학생']:[],['방법','상담 대상']),
+        rows:s.list.map((r,i)=>[`${i+1} / ${n}`,cKind(r),ngFmtDate(r.date)||'날짜 미기재'].concat(all?[stuLabel(r.studentId)]:[],[r.method||'',r.target||'']))},
+      records:s.list.map((r,i)=>{ const kk=cKind(r), sec=kinds.length>1&&kk!==lastKind?`■ ${kk} (${byKind(kk).length}건)`:''; lastKind=kk;
+        return {section:sec,head:`[${i+1} / ${n}]  ${kk}  ·  ${ngFmtDate(r.date)||'날짜 미기재'}${r.time?'  '+r.time:''}  ·  ${r.method||''}`,
+        rows:[].concat(all?[['학생',stuLabel(r.studentId)]]:[],[['상담 대상',r.target||''],['요청자',r.requester||''],['장소',r.place||''],['상담 주제',(r.types||[]).join(', ')]],F.map(f=>[f[1],r[f[0]]||'']))}; }),
       closing:'위 상담 기록은 사실과 다름없음을 확인합니다.' };
   }
   opts.title=$(m+'-eTitle').value.trim()||MODES[m].docTitle; opts.today=ngFmtDate(today()); opts.signer=teacher;
@@ -741,14 +758,21 @@ function exportXlsx(m){
     const ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[9,12,10,12,10,18,45,35,45,35,35,16].map(w=>({wch:w}));
     XLSX.utils.book_append_sheet(wb,ws,'누가기록');
   } else {
-    const head=['연번','날짜','시간','학생','상담 방법','상담 대상','대상 구분','요청자','장소','상담 주제'].concat(F.map(f=>f[1]),['최종 수정']);
-    const rows=[head].concat(s.list.map((r,i)=>[`${i+1} / ${n}`,r.date||'',r.time||'',stuLabel(r.studentId),r.method||'',r.target||'',GROUP(r.target),r.requester||'',r.place||'',(r.types||[]).join(', ')].concat(F.map(f=>r[f[0]]||''),[nowLabel(r.updatedAt)])),[[],[`총 ${n}건`]]);
-    const ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[9,12,12,12,12,10,9,10,12,18,45,35,35,30,30,16].map(w=>({wch:w}));
-    const st=cStats(s.list), byMonth={};
-    s.list.forEach(r=>{ const mo=(r.date||'').slice(0,7)||'날짜 없음'; byMonth[mo]=byMonth[mo]||{}; byMonth[mo][r.method]=(byMonth[mo][r.method]||0)+1; });
-    const srows=[['월'].concat(st.cols,['합계'])].concat(Object.keys(byMonth).sort().map(mo=>{ const c=st.cols.map(x=>byMonth[mo][x]||0); return [mo].concat(c,[c.reduce((a,b)=>a+b,0)]); }),[['합계'].concat(st.counts,[st.total])]);
-    const ws2=XLSX.utils.aoa_to_sheet(srows); ws2['!cols']=[{wch:12}].concat(st.cols.map(()=>({wch:14})),[{wch:8}]);
-    XLSX.utils.book_append_sheet(wb,ws,'상담 목록'); XLSX.utils.book_append_sheet(wb,ws2,'상담 실적');
+    const head=['연번','구분','날짜','시간','학생','상담 방법','상담 대상','요청자','장소','상담 주제'].concat(F.map(f=>f[1]),['최종 수정']);
+    const rowOf=(r,i,len)=>[`${i+1} / ${len}`,cKind(r),r.date||'',r.time||'',stuLabel(r.studentId),r.method||'',r.target||'',r.requester||'',r.place||'',(r.types||[]).join(', ')].concat(F.map(f=>r[f[0]]||''),[nowLabel(r.updatedAt)]);
+    const colW=[9,12,12,10,14,12,12,10,12,18,45,35,35,30,30,16].map(w=>({wch:w}));
+    const sheet=(list,title)=>{ const ws=XLSX.utils.aoa_to_sheet([head].concat(list.map((r,i)=>rowOf(r,i,list.length)),[[],[`총 ${list.length}건`]])); ws['!cols']=colW; XLSX.utils.book_append_sheet(wb,ws,title); };
+    const st=cStats(s.list), kinds=KIND_ORDER.filter(x=>s.list.some(r=>cKind(r)===x));
+    // 상담 실적: 월별 × 구분, 그리고 구분 × 방법
+    const months=[...new Set(s.list.map(r=>(r.date||'').slice(0,7)||'날짜 없음'))].sort();
+    const srows=[['월별 상담 실적'],['월'].concat(kinds,['합계'])]
+      .concat(months.map(mo=>{ const c=kinds.map(x=>s.list.filter(r=>cKind(r)===x&&((r.date||'').slice(0,7)||'날짜 없음')===mo).length); return [mo].concat(c,[c.reduce((a,b)=>a+b,0)]); }))
+      .concat([['합계'].concat(kinds.map(x=>s.list.filter(r=>cKind(r)===x).length),[n]),[],['구분·방법별 상담 실적'],['구분'].concat(st.cols,['합계'])])
+      .concat(kinds.map(x=>{ const l=s.list.filter(r=>cKind(r)===x); return [x].concat(st.cols.map(c=>l.filter(r=>r.method===c).length),[l.length]); }),[['합계'].concat(st.counts,[st.total])]);
+    const ws2=XLSX.utils.aoa_to_sheet(srows); ws2['!cols']=[{wch:16}].concat(Array(Math.max(kinds.length,st.cols.length)).fill({wch:14}),[{wch:8}]);
+    XLSX.utils.book_append_sheet(wb,ws2,'상담 실적');
+    kinds.forEach(x=>sheet(s.list.filter(r=>cKind(r)===x),x));
+    if(kinds.length>1) sheet(s.list,'전체 목록');
   }
   offer(fileBase(m,s)+'.xlsx',XLSX.write(wb,{bookType:'xlsx',type:'array'}));
 }
