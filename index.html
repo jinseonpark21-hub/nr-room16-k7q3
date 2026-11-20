@@ -180,6 +180,7 @@ table.stu th{color:var(--muted);font-weight:500;font-size:13px}
       <div class="grid">
         <div class="span2"><label for="v-student">학생</label><select id="v-student"></select></div>
         <div class="span2"><label for="v-kind">보기</label><select id="v-kind"><option value="">생활지도 + 상담 모두</option><option value="g">생활지도 누가기록만</option><option value="c">상담 기록만</option></select></div>
+        <div class="span2"><label for="v-sort">정렬</label><select id="v-sort"><option value="new">최근순 (새 기록이 위)</option><option value="old">오래된순 (처음 기록이 위)</option></select></div>
       </div>
       <div class="stat" id="v-stat"></div>
     </div>
@@ -373,7 +374,8 @@ function buildUI(){
       <div class="span2"><label for="${m}-lStudent">학생</label><select id="${m}-lStudent"></select></div>
       <div><label for="${m}-lFrom">시작일</label><input type="date" id="${m}-lFrom"></div>
       <div><label for="${m}-lTo">종료일</label><input type="date" id="${m}-lTo"></div>
-      <div class="span4"><label for="${m}-lSearch">검색</label><input id="${m}-lSearch" placeholder="내용 검색"></div></div></div><div id="${m}-listBox"></div>`;
+      <div class="span2"><label for="${m}-lSearch">검색</label><input id="${m}-lSearch" placeholder="내용 검색"></div>
+      <div class="span2"><label for="${m}-lSort">정렬</label><select id="${m}-lSort"><option value="new">최근순 (새 기록이 위)</option><option value="old">오래된순 (처음 기록이 위)</option></select></div></div></div><div id="${m}-listBox"></div>`;
     $(`sec-${m}-export`).innerHTML=`<div class="card"><h2>${m==='g'?'증빙 파일 만들기':'상담 실적 · 증빙 파일 만들기'}</h2><div class="grid">
       <div class="span2"><label for="${m}-eStudent">학생</label><select id="${m}-eStudent"></select></div>
       <div><label for="${m}-eFrom">시작일</label><input type="date" id="${m}-eFrom"></div>
@@ -383,12 +385,12 @@ function buildUI(){
       <p class="hint" id="${m}-eCount"></p><div class="hint" id="${m}-eStats"></div>
       <div class="row" style="margin-top:10px"><button class="btn primary" id="${m}-docx">워드 파일 (.docx)</button><button class="btn primary" id="${m}-xlsx">엑셀 파일 (.xlsx)</button></div>
       <p class="hint">워드 파일은 한글(HWP)에서도 열립니다. 한글에서 연 뒤 ‘다른 이름으로 저장’에서 .hwp 형식을 고르면 한글 파일로 바꿀 수 있습니다. ${m==='g'?'워드 파일은 서명란이 있는 제출용 서식, 엑셀 파일은 표로 정리한 목록입니다.':'워드 파일은 상담 실적표와 서명란이 있는 제출용 서식, 엑셀 파일은 상담 목록과 월별 실적 시트로 되어 있습니다.'}</p></div>`;
-    ['lStudent','lFrom','lTo'].forEach(i=>$(`${m}-${i}`).onchange=()=>renderList(m)); $(`${m}-lSearch`).oninput=()=>renderList(m);
+    ['lStudent','lFrom','lTo','lSort'].forEach(i=>$(`${m}-${i}`).onchange=()=>renderList(m)); $(`${m}-lSearch`).oninput=()=>renderList(m);
     ['eStudent','eFrom','eTo'].forEach(i=>$(`${m}-${i}`).onchange=()=>renderExportCount(m));
     $(`${m}-docx`).onclick=()=>exportDocx(m); $(`${m}-xlsx`).onclick=()=>exportXlsx(m);
     $(`${m}-reset`).onclick=()=>resetForm(m); $(`${m}-save`).onclick=()=>saveRecord(m); $(`${m}-ai`).onclick=()=>aiFill(m);
   });
-  $('v-student').onchange=renderView; $('v-kind').onchange=renderView;
+  $('v-student').onchange=renderView; $('v-kind').onchange=renderView; $('v-sort').onchange=renderView;
 }
 
 function renderChips(m){ const box=$(m+'-types'); box.innerHTML=''; MODES[m].types.forEach(t=>{ const c=document.createElement('button'); c.type='button'; c.className='chip'+(S[m].types.has(t)?' on':''); c.textContent=t;
@@ -561,7 +563,8 @@ function recCard(m,r,withKind){
   return el;
 }
 function renderList(m){
-  const list=filtered(m,$(m+'-lStudent').value,$(m+'-lFrom').value,$(m+'-lTo').value,$(m+'-lSearch').value.trim());
+  let list=filtered(m,$(m+'-lStudent').value,$(m+'-lFrom').value,$(m+'-lTo').value,$(m+'-lSearch').value.trim());
+  if($(m+'-lSort').value==='old') list=list.reverse();
   const box=$(m+'-listBox');
   if(!list.length){ box.innerHTML=`<div class="card empty">${MODES[m].noun}이 없습니다.</div>`; return; }
   box.innerHTML=''; list.forEach(r=>box.appendChild(recCard(m,r,false)));
@@ -575,6 +578,7 @@ function renderView(){
   $('v-stat').innerHTML=`<span>생활지도 <b>${g.length}</b>건</span><span>상담 <b>${c.length}</b>건</span>`;
   const items=[].concat(kind!=='c'?g.map(r=>['g',r]):[], kind!=='g'?c.map(r=>['c',r]):[])
     .sort((a,b)=>(b[1].date||'').localeCompare(a[1].date||'')||(b[1].createdAt||0)-(a[1].createdAt||0));
+  if($('v-sort').value==='old') items.reverse();
   if(!items.length){ box.innerHTML='<div class="card empty">이 학생의 기록이 없습니다.</div>'; return; }
   box.innerHTML=''; items.forEach(([m,r])=>box.appendChild(recCard(m,r,true)));
 }
